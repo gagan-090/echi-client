@@ -643,6 +643,30 @@ const AppShell = () => {
           </div>
         </div>
       )}
+      {/* ── BOTTOM NAV BAR (Mobile) ── */}
+      {!activeConversationId && (
+        <nav className="md:hidden fixed bottom-0 left-0 w-full bg-surface-container-highest/90 backdrop-blur-xl border-t border-outline-variant/30 flex justify-around items-center h-[72px] z-40 pb-safe shadow-[0_-4px_20px_rgba(0,0,0,0.05)]">
+          {[
+            { key: 'messages', icon: 'chat_bubble', label: 'Chats' },
+            { key: 'calls', icon: 'call', label: 'Calls' },
+            { key: 'settings', icon: 'settings', label: 'Settings', action: () => setShowSettings(true) },
+          ].map(item => (
+            <button
+              key={item.key}
+              onClick={() => {
+                if(item.action) { item.action(); return; }
+                setActiveNav(item.key);
+              }}
+              className={`flex flex-col items-center justify-center flex-1 h-full transition-colors ${item.key === activeNav && !item.action ? 'text-brand-teal' : 'text-outline hover:text-on-surface'}`}
+            >
+              <div className={`px-4 py-1 rounded-full ${item.key === activeNav && !item.action ? 'bg-brand-teal/15' : 'bg-transparent'}`}>
+                <span className="material-symbols-outlined text-[24px]" style={item.key === activeNav && !item.action ? {fontVariationSettings: "'FILL' 1"} : {}}>{item.icon}</span>
+              </div>
+              <span className="text-[12px] font-medium mt-1">{item.label}</span>
+            </button>
+          ))}
+        </nav>
+      )}
     </div>
   );
 };
