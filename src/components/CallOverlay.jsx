@@ -19,42 +19,61 @@ const CallOverlay = ({ callState, remoteUser, localStream, remoteStream, acceptC
   if (callState === 'idle') return null;
 
   return (
-    <div className={`fixed z-[100] transition-all duration-300 shadow-2xl overflow-hidden ${
-      callState === 'connected' && callType === 'video'
-        ? 'top-20 right-8 w-80 h-[400px] rounded-3xl bg-black border-2 border-outline-variant/30'
-        : 'top-8 right-8 w-80 rounded-2xl bg-surface-container-lowest border border-outline-variant/20 p-lg flex flex-col items-center gap-md backdrop-blur-md'
+    <div className={`fixed inset-0 z-[100] transition-all duration-500 ease-out flex items-center justify-center ${
+      callState !== 'idle' ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
     }`}>
-      {/* Background / Caller Info (when not connected in video) */}
-      {!(callState === 'connected' && callType === 'video') && (
-        <div className="text-center w-full flex flex-col items-center">
-          {remoteUser?.avatar_url ? (
-            <img src={remoteUser.avatar_url} alt="Caller" className="w-20 h-20 rounded-full object-cover mb-sm shadow-md border-2 border-brand-teal/30" />
-          ) : (
-            <div className="w-16 h-16 rounded-full bg-brand-teal/10 flex items-center justify-center text-brand-teal animate-pulse mb-sm">
-               <span className="material-symbols-outlined text-[32px]">{callType === 'video' ? 'videocam' : 'call'}</span>
-            </div>
-          )}
-          <h2 className="text-on-surface text-headline-md font-headline-md mb-1 capitalize">
-            {callState === 'ringing' ? `Calling...` : callState === 'incoming' ? `Incoming Call` : `Call in Progress`}
-          </h2>
-          <p className="text-on-surface-variant font-body-lg text-[15px] font-medium">{remoteUser?.display_name || 'Unknown'}</p>
-        </div>
-      )}
-
-      {/* Video Streams */}
-      <div className={`relative w-full h-full flex items-center justify-center ${callState === 'connected' && callType === 'video' ? '' : 'hidden'}`}>
-        {callState === 'connected' && remoteStream && callType === 'video' && (
+      {/* Background Glass */}
+      <div className="absolute inset-0 bg-black/40 backdrop-blur-3xl transition-opacity duration-500" />
+      
+      {/* Main Container */}
+      <div className={`relative w-full max-w-sm h-full max-h-[85vh] md:max-h-[700px] md:h-[85vh] bg-surface-container-highest/20 md:rounded-[40px] shadow-2xl border border-white/10 overflow-hidden flex flex-col items-center justify-between transition-transform duration-500 ease-out ${
+        callState !== 'idle' ? 'scale-100 translate-y-0' : 'scale-95 translate-y-10'
+      }`}>
+        
+        {/* Remote Video Background (if connected and video) */}
+        {callState === 'connected' && callType === 'video' && remoteStream && (
           <video
             ref={remoteVideoRef}
             autoPlay
             playsInline
-            className="w-full h-full object-cover"
+            className="absolute inset-0 w-full h-full object-cover z-0"
           />
         )}
-        
-        {/* PIP Local Video */}
+
+        {/* Top Info Section */}
+        <div className="relative z-20 flex flex-col items-center pt-16 w-full px-6">
+          {!(callState === 'connected' && callType === 'video') && (
+            <div className="flex flex-col items-center animate-fade-in-down">
+              <div className="relative mb-6">
+                {remoteUser?.avatar_url ? (
+                  <img src={remoteUser.avatar_url} alt="Caller" className="w-28 h-28 rounded-full object-cover shadow-2xl border-4 border-white/20" />
+                ) : (
+                  <div className="w-28 h-28 rounded-full bg-brand-teal/20 backdrop-blur-md flex items-center justify-center text-brand-teal mb-sm shadow-2xl border-4 border-white/20">
+                     <span className="material-symbols-outlined text-[48px]">{callType === 'video' ? 'videocam' : 'call'}</span>
+                  </div>
+                )}
+                {/* Ripples for ringing */}
+                {callState === 'ringing' && (
+                  <>
+                    <div className="absolute inset-0 rounded-full border border-brand-teal/50 animate-ping opacity-75" style={{ animationDuration: '2s' }} />
+                    <div className="absolute inset-0 rounded-full border border-brand-teal/30 animate-ping opacity-50" style={{ animationDuration: '2s', animationDelay: '0.5s' }} />
+                  </>
+                )}
+              </div>
+              
+              <h2 className="text-white text-display-sm font-display-sm mb-1 text-center drop-shadow-md">
+                {remoteUser?.display_name || 'Unknown'}
+              </h2>
+              <p className="text-white/70 font-body-lg text-[17px] font-medium tracking-wide uppercase">
+                {callState === 'ringing' ? `${callType} Calling...` : callState === 'incoming' ? `Incoming ${callType} Call` : `Echo ${callType === 'video' ? 'Video' : 'Audio'}`}
+              </p>
+            </div>
+          )}
+        </div>
+
+        {/* Local PIP Video */}
         {(localStream && callState === 'connected' && callType === 'video') && (
-          <div className="absolute bottom-4 right-4 w-20 h-28 bg-black rounded-xl overflow-hidden shadow-xl border-2 border-surface-container-low/30 z-10">
+          <div className="absolute top-6 right-6 w-28 h-40 bg-black/50 rounded-2xl overflow-hidden shadow-2xl border-2 border-white/20 z-30 animate-fade-in">
             <video
               ref={localVideoRef}
               autoPlay
@@ -64,26 +83,36 @@ const CallOverlay = ({ callState, remoteUser, localStream, remoteStream, acceptC
             />
           </div>
         )}
-      </div>
 
-      {/* Controls */}
-      <div className={`flex justify-center items-center gap-md w-full ${callState === 'connected' && callType === 'video' ? 'absolute bottom-4 left-0 right-0 z-20' : 'mt-2'}`}>
-        {callState === 'incoming' && (
-          <button 
-            onClick={acceptCall}
-            className="flex-1 py-sm rounded-full bg-brand-teal text-white shadow-md hover:shadow-lg transition-all font-label-md flex justify-center items-center gap-2"
-          >
-            <span className="material-symbols-outlined text-[20px]">call</span> Accept
-          </button>
-        )}
-        
-        <button 
-          onClick={callState === 'incoming' ? rejectCall : endCall}
-          className={`py-sm rounded-full bg-error text-white shadow-md hover:shadow-lg transition-all font-label-md flex justify-center items-center gap-2 ${callState === 'incoming' ? 'flex-1 bg-error/10 text-error shadow-none hover:bg-error/20' : callState === 'connected' && callType === 'video' ? 'w-12 h-12 rounded-full !p-0 shadow-[0_0_15px_rgba(255,84,73,0.4)]' : 'flex-1'}`}
-        >
-          <span className="material-symbols-outlined text-[20px]">call_end</span> 
-          {!(callState === 'connected' && callType === 'video') && (callState === 'incoming' ? 'Decline' : 'End Call')}
-        </button>
+        {/* Bottom Controls */}
+        <div className="relative z-20 w-full px-8 pb-16 flex justify-around items-end">
+          {callState === 'incoming' ? (
+            <>
+              {/* Decline */}
+              <button 
+                onClick={rejectCall}
+                className="w-20 h-20 rounded-full bg-[#FF3B30] text-white shadow-[0_0_20px_rgba(255,59,48,0.4)] flex flex-col items-center justify-center gap-1 transition-transform hover:scale-105 active:scale-95"
+              >
+                <span className="material-symbols-outlined text-[32px]">call_end</span>
+              </button>
+              
+              {/* Accept */}
+              <button 
+                onClick={acceptCall}
+                className="w-20 h-20 rounded-full bg-[#34C759] text-white shadow-[0_0_20px_rgba(52,199,89,0.4)] flex flex-col items-center justify-center gap-1 transition-transform hover:scale-105 active:scale-95 animate-bounce-subtle"
+              >
+                <span className="material-symbols-outlined text-[32px]">{callType === 'video' ? 'videocam' : 'call'}</span>
+              </button>
+            </>
+          ) : (
+            <button 
+              onClick={endCall}
+              className="w-20 h-20 rounded-full bg-[#FF3B30] text-white shadow-[0_0_30px_rgba(255,59,48,0.5)] flex items-center justify-center transition-transform hover:scale-105 active:scale-95"
+            >
+              <span className="material-symbols-outlined text-[36px]">call_end</span> 
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );

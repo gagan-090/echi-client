@@ -167,9 +167,9 @@ const AppShell = () => {
   };
 
   return (
-    <div className="bg-background text-on-surface overflow-hidden h-screen font-body-md text-body-md flex relative">
-      <div className="fixed inset-0 dot-grid z-0 pointer-events-none" />
-      <div className="fixed inset-0 grain-overlay z-10 pointer-events-none" />
+    <div className="bg-background text-on-surface overflow-hidden h-[100dvh] font-body-md text-body-md flex relative selection:bg-brand-teal/20">
+      <div className="fixed inset-0 dot-grid z-0 pointer-events-none opacity-50" />
+      <div className="fixed inset-0 grain-overlay z-10 pointer-events-none opacity-30" />
 
       {/* ── SIDE NAV BAR (Desktop) ── */}
       <aside className="hidden md:flex flex-col h-screen w-80 fixed left-0 top-0 bg-surface-container-low border-r border-outline-variant/30 py-lg z-30">
@@ -365,10 +365,10 @@ const AppShell = () => {
           {activeContact ? (
             <>
               {/* Chat Header */}
-              <header className="h-[72px] px-lg bg-surface/90 backdrop-blur-md sticky top-0 flex justify-between items-center z-10 border-b border-outline-variant/20 shadow-sm flex-shrink-0">
+              <header className="h-[72px] px-lg bg-white/60 backdrop-blur-2xl sticky top-0 flex justify-between items-center z-20 border-b border-outline-variant/10 shadow-[0_4px_30px_rgba(0,0,0,0.02)] flex-shrink-0 supports-[backdrop-filter]:bg-white/40">
                 <div className="flex items-center gap-sm md:gap-md min-w-0">
-                  <button onClick={() => setActive(null)} className="md:hidden p-2 -ml-2 text-outline hover:bg-surface-container rounded-full flex-shrink-0">
-                    <span className="material-symbols-outlined">arrow_back</span>
+                  <button onClick={() => setActive(null)} className="md:hidden p-2 -ml-2 text-brand-charcoal hover:bg-surface-container rounded-full flex-shrink-0 transition-colors">
+                    <span className="material-symbols-outlined">arrow_back_ios_new</span>
                   </button>
                   <div className={`w-10 h-10 md:w-12 md:h-12 rounded-full ${getInitialBg(activeContact.other_user?.id)} flex items-center justify-center font-label-md text-on-surface shadow-sm overflow-hidden flex-shrink-0`}>
                     {activeContact.other_user?.avatar_url ? (
@@ -398,7 +398,7 @@ const AppShell = () => {
               </header>
 
               {/* Message Area */}
-              <div className="flex-1 overflow-y-auto px-xl py-xl flex flex-col bg-[#EFEFED]/30" style={{ backgroundImage: 'radial-gradient(#d1d5db 1px, transparent 1px)', backgroundSize: '24px 24px' }}>
+              <div className="flex-1 overflow-y-auto px-md md:px-xl py-xl flex flex-col bg-[#F4F4F2]/40 pb-28 md:pb-xl" style={{ backgroundImage: 'radial-gradient(#d1d5db 1px, transparent 1px)', backgroundSize: '24px 24px' }}>
                 {groupedMessages.map((item, index) => {
                   if (item.type === 'date') {
                     return (
@@ -441,24 +441,24 @@ const AppShell = () => {
 
                   return isSent ? (
                     <div key={msg.id} className={`flex flex-col items-end w-full group ${showTail ? 'mb-2' : 'mb-0.5'}`}>
-                      <div className={`bg-brand-sage px-3 pt-2 pb-1 rounded-2xl max-w-[75%] text-brand-charcoal shadow-bubble min-w-[80px] w-fit flex flex-col relative ${showTail ? 'rounded-tr-sm msg-tail-sent' : ''}`}>
+                      <div className={`bg-gradient-to-br from-brand-sage to-brand-sage/90 px-3.5 pt-2.5 pb-1.5 rounded-[20px] max-w-[85%] md:max-w-[75%] text-brand-charcoal shadow-sm min-w-[80px] w-fit flex flex-col relative border border-brand-sage/50 ${showTail ? 'rounded-tr-sm msg-tail-sent' : ''}`}>
                         <span className="text-[15px] leading-relaxed break-words">{msg.content}</span>
-                        <div className="flex items-center justify-end gap-1 select-none mt-0.5 self-end">
-                          <span className="text-[10px] text-brand-forest/60">{formatTime(msg.sent_at)}</span>
+                        <div className="flex items-center justify-end gap-1 select-none mt-1 self-end opacity-80">
+                          <span className="text-[10px] text-brand-forest/60 font-medium">{formatTime(msg.sent_at)}</span>
                           {msg.status === 'sending' && <span className="material-symbols-outlined text-[14px] animate-spin text-brand-forest/60">progress_activity</span>}
                           {msg.status === 'sent' && <span className="material-symbols-outlined text-[15px] text-brand-forest/60">check</span>}
                           {msg.status === 'delivered' && <span className="material-symbols-outlined text-[15px] text-brand-forest/60">done_all</span>}
-                          {msg.status === 'read' && <span className="material-symbols-outlined text-[15px] text-[#53bdeb]" style={{ fontVariationSettings: "'FILL' 1" }}>done_all</span>}
-                          {!['sending', 'sent', 'delivered', 'read'].includes(msg.status) && <span className="material-symbols-outlined text-[15px] text-[#53bdeb]">done_all</span>}
+                          {msg.status === 'read' && <span className="material-symbols-outlined text-[15px] text-[#2FA4E7]" style={{ fontVariationSettings: "'FILL' 1" }}>done_all</span>}
+                          {!['sending', 'sent', 'delivered', 'read'].includes(msg.status) && <span className="material-symbols-outlined text-[15px] text-[#2FA4E7]">done_all</span>}
                         </div>
                       </div>
                     </div>
                   ) : (
                     <div key={msg.id} className={`flex flex-col items-start w-full group ${showTail ? 'mb-2' : 'mb-0.5'}`}>
-                      <div className={`bg-white px-3 pt-2 pb-1 rounded-2xl max-w-[75%] shadow-bubble border border-outline-variant/10 text-brand-charcoal min-w-[80px] w-fit flex flex-col relative ${showTail ? 'rounded-tl-sm msg-tail-received' : ''}`}>
+                      <div className={`bg-white/90 backdrop-blur-sm px-3.5 pt-2.5 pb-1.5 rounded-[20px] max-w-[85%] md:max-w-[75%] shadow-[0_2px_10px_rgba(0,0,0,0.03)] border border-outline-variant/10 text-brand-charcoal min-w-[80px] w-fit flex flex-col relative ${showTail ? 'rounded-tl-sm msg-tail-received' : ''}`}>
                         <span className="text-[15px] leading-relaxed break-words">{msg.content}</span>
-                        <div className="flex items-center justify-end mt-0.5 self-end">
-                          <span className="text-[10px] text-outline select-none">{formatTime(msg.sent_at)}</span>
+                        <div className="flex items-center justify-end mt-1 self-end opacity-60">
+                          <span className="text-[10px] text-brand-charcoal font-medium select-none">{formatTime(msg.sent_at)}</span>
                         </div>
                       </div>
                     </div>
@@ -468,11 +468,11 @@ const AppShell = () => {
                 {/* Bouncing Typing Indicator */}
                 {isTyping && (
                   <div className="flex flex-col items-start w-full group mt-1 mb-2">
-                    <div className="bg-white px-4 py-3.5 rounded-2xl rounded-tl-sm shadow-bubble border border-outline-variant/10 msg-tail-received relative w-fit">
+                    <div className="bg-white/90 backdrop-blur-sm px-4 py-3.5 rounded-[20px] rounded-tl-sm shadow-[0_2px_10px_rgba(0,0,0,0.03)] border border-outline-variant/10 msg-tail-received relative w-fit">
                       <div className="flex items-center gap-1.5 h-3">
-                        <div className="w-1.5 h-1.5 bg-outline-variant rounded-full animate-bounce-dot"></div>
-                        <div className="w-1.5 h-1.5 bg-outline-variant rounded-full animate-bounce-dot animation-delay-200"></div>
-                        <div className="w-1.5 h-1.5 bg-outline-variant rounded-full animate-bounce-dot animation-delay-400"></div>
+                        <div className="w-1.5 h-1.5 bg-brand-charcoal/40 rounded-full animate-bounce-dot"></div>
+                        <div className="w-1.5 h-1.5 bg-brand-charcoal/40 rounded-full animate-bounce-dot animation-delay-200"></div>
+                        <div className="w-1.5 h-1.5 bg-brand-charcoal/40 rounded-full animate-bounce-dot animation-delay-400"></div>
                       </div>
                     </div>
                   </div>
@@ -482,15 +482,15 @@ const AppShell = () => {
               </div>
 
               {/* Composer */}
-              <footer className="px-lg py-md bg-surface/90 backdrop-blur-md border-t border-outline-variant/20 flex items-center gap-3">
-                <button className="p-2 text-outline hover:text-on-surface transition-colors rounded-full hover:bg-surface-container"><span className="material-symbols-outlined">add</span></button>
-                <form onSubmit={handleSend} className="flex-1 flex items-center">
-                  <div className="flex-1 bg-white border border-outline-variant/30 rounded-full px-5 py-3 flex items-center gap-md shadow-sm focus-within:ring-2 focus-within:ring-brand-teal/20 focus-within:border-brand-teal transition-all">
+              <footer className="px-md md:px-lg py-sm md:py-md bg-white/70 backdrop-blur-2xl border-t border-outline-variant/10 flex items-center gap-2 md:gap-3 supports-[backdrop-filter]:bg-white/40">
+                <button className="p-2 text-brand-charcoal hover:bg-surface-container-low transition-colors rounded-full"><span className="material-symbols-outlined">add</span></button>
+                <form onSubmit={handleSend} className="flex-1 flex items-center relative">
+                  <div className="flex-1 bg-surface-container-highest/50 border border-outline-variant/20 rounded-[24px] px-5 py-3.5 flex items-center gap-md shadow-inner focus-within:bg-white focus-within:ring-2 focus-within:ring-brand-teal/20 focus-within:border-brand-teal transition-all">
                     <input
                       type="text"
                       value={messageInput}
                       onChange={handleTyping}
-                      className="flex-1 border-none bg-transparent focus:ring-0 text-brand-charcoal font-body-md text-[15px] placeholder:text-outline/60 outline-none"
+                      className="flex-1 border-none bg-transparent focus:ring-0 text-brand-charcoal font-body-md text-[15px] placeholder:text-brand-charcoal/40 outline-none"
                       placeholder="Type a message"
                     />
                   </div>
