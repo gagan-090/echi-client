@@ -141,7 +141,7 @@ const AppShell = () => {
     // Image Compression
     if (file.type.startsWith('image/') && !file.type.includes('gif')) {
       try {
-        const options = { maxSizeMB: 1, maxWidthOrHeight: 1920, useWebWorker: true };
+        const options = { maxSizeMB: 1, maxWidthOrHeight: 1920, useWebWorker: false };
         file = await imageCompression(file, options);
       } catch (err) {
         console.error('Compression error', err);
@@ -395,7 +395,7 @@ const AppShell = () => {
                             {(contact.last_message_preview || '').includes('Call') && (
                               <span className="material-symbols-outlined text-[14px]">call</span>
                             )}
-                            {contact.last_message_preview || 'No messages yet'}
+                            {(contact.last_message_preview || '').replace(/^\[REPLY:[a-zA-Z0-9-]+\]/, '') || 'No messages yet'}
                           </>
                         )}
                       </p>
