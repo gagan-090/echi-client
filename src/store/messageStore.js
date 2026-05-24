@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import api from '../services/api';
+import { useConversationStore } from './conversationStore';
 
 export const useMessageStore = create((set, get) => ({
   messages: {}, // { [convId]: Message[] }
@@ -20,7 +21,7 @@ export const useMessageStore = create((set, get) => ({
     }
   },
 
-  sendMessage: async (convId, content, senderId) => {
+  sendMessage: async (convId, content, senderId, type = 'text', fileData = null) => {
     // Optimistic UI update
     const tempId = `temp-${Date.now()}`;
     const tempMsg = {
@@ -28,6 +29,8 @@ export const useMessageStore = create((set, get) => ({
       conversation_id: convId,
       sender_id: senderId,
       content,
+      message_type: type,
+      file_url: fileData?.url || null,
       is_deleted: false,
       sent_at: new Date().toISOString(),
       status: 'sending'
@@ -36,7 +39,8 @@ export const useMessageStore = create((set, get) => ({
     get().appendMessage(convId, tempMsg);
 
     try {
-      const { data } = await api.post(`/conversations/${convId}/messages`, { content });
+      const payload = { content, type, fileData };
+      const { data } = await api.post(`/conversations/${convId}/messages`, payload);
       // Replace temp message with real one
       set((state) => ({
         messages: {
