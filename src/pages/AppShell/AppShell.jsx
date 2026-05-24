@@ -9,6 +9,8 @@ import { useWebRTC } from '../../hooks/useWebRTC';
 import { useAudioRecorder } from '../../hooks/useAudioRecorder';
 import CallOverlay from '../../components/CallOverlay';
 import api from '../../services/api';
+import imageCompression from 'browser-image-compression';
+import { motion, useAnimation } from 'framer-motion';
 
 /* ── Helper: initials from name ── */
 const getInitials = (name) => {
@@ -70,6 +72,7 @@ const AppShell = () => {
   const fileInputRef = useRef(null);
   const { isRecording, recordingTime, startRecording, stopRecording, cancelRecording } = useAudioRecorder();
   const [uploadingFile, setUploadingFile] = useState(false);
+  const [replyToId, setReplyToId] = useState(null);
   
   // Modals
   const [showSettings, setShowSettings] = useState(false);
@@ -130,10 +133,20 @@ const AppShell = () => {
   // Handle Send Message
   
   const handleFileUpload = async (e, forcedType = null) => {
-    const file = e.target.files?.[0];
+    let file = e.target.files?.[0];
     if (!file || !activeConversationId) return;
     setShowAttachMenu(false);
     setUploadingFile(true);
+    
+    // Image Compression
+    if (file.type.startsWith('image/') && !file.type.includes('gif')) {
+      try {
+        const options = { maxSizeMB: 1, maxWidthOrHeight: 1920, useWebWorker: true };
+        file = await imageCompression(file, options);
+      } catch (err) {
+        console.error('Compression error', err);
+      }
+    }
     
     const formData = new FormData();
     formData.append('file', file);
@@ -158,7 +171,8 @@ const AppShell = () => {
         mimeType: file.type
       };
       
-      await sendMessage(activeConversationId, '', user.id, msgType, fileData);
+      await sendMessage(activeConversationId, '', user.id, msgType, fileData, replyToId);
+      setReplyToId(null);
     } catch (err) {
       console.error('File upload failed', err);
     } finally {
@@ -187,7 +201,8 @@ const AppShell = () => {
           fileSize: audioBlob.size,
           mimeType: 'audio/webm'
         };
-        await sendMessage(activeConversationId, '', user.id, 'audio', fileData);
+        await sendMessage(activeConversationId, '', user.id, 'audio', fileData, replyToId);
+        setReplyToId(null);
       } catch (err) {
         console.error('Voice note upload failed', err);
       } finally {
@@ -204,7 +219,9 @@ const AppShell = () => {
     
     const content = messageInput.trim();
     setMessageInput('');
-    await sendMessage(activeConversationId, content, user.id);
+    const currentReply = replyToId;
+    setReplyToId(null);
+    await sendMessage(activeConversationId, content, user.id, 'text', null, currentReply);
     broadcastTyping(activeConversationId, false);
   };
 
@@ -440,7 +457,7 @@ const AppShell = () => {
           {activeContact ? (
             <>
               {/* Chat Header */}
-              <header className="h-[72px] px-lg bg-[#f0f2f5] sticky top-0 flex justify-between items-center z-20 border-b border-[#d1d7db] flex-shrink-0 shadow-sm">
+              <header className="h-[72px] px-lg bg-surface-container-lowest/95 backdrop-blur-xl sticky top-0 flex justify-between items-center z-20 border-b border-outline-variant/20 flex-shrink-0 shadow-sm">
                 <div className="flex items-center gap-sm md:gap-md min-w-0">
                   <button onClick={() => setActive(null)} className="md:hidden p-2 -ml-2 text-brand-charcoal hover:bg-surface-container rounded-full flex-shrink-0 transition-colors">
                     <span className="material-symbols-outlined">arrow_back_ios_new</span>
@@ -473,7 +490,7 @@ const AppShell = () => {
               </header>
 
               {/* Message Area */}
-              <div className="flex-1 overflow-y-auto px-md md:px-xl py-xl flex flex-col bg-[#E5DDD5] pb-28 md:pb-xl" style={{ backgroundImage: 'url("https://www.transparenttextures.com/patterns/cubes.png")', opacity: 0.95 }}>
+              <div className="flex-1 overflow-y-auto px-md md:px-xl py-xl flex flex-col bg-[#F8F9FA]/80 pb-28 md:pb-xl">
                 {groupedMessages.map((item, index) => {
                   if (item.type === 'date') {
                     return (
@@ -487,6 +504,29 @@ const AppShell = () => {
 
                   const msg = item;
                   const isSent = msg.sender_id === user.id;
+                  
+                  let displayContent = msg.content || '';
+                  let replyData = null;
+                  const replyMatch = displayContent.match(/^\[REPLY:([a-zA-Z0-9-]+)\](.*)$/s);
+                  if (replyMatch) {
+                    const rId = replyMatch[1];
+                    displayContent = replyMatch[2];
+                    const originalMsg = activeMessages.find(m => m.id === rId);
+                    if (originalMsg) {
+                       const originalSender = conversations.find(c => c.id === activeConversationId)?.other_user?.id === originalMsg.sender_id ? conversations.find(c => c.id === activeConversationId)?.other_user?.display_name : 'You';
+                       replyData = {
+                         sender: originalSender,
+                         content: (originalMsg.content || '').replace(/^\[REPLY:[^\]]+\]/, '').substring(0, 50) || 'Attachment'
+                       };
+                    }
+                  }
+                  
+                  const handleDragEnd = (e, info) => {
+                    if (info.offset.x > 50) {
+                      setReplyToId(msg.id);
+                    }
+                  };
+
 
                   // Inline Call Log Renderer
                   if (msg.file_url && msg.file_url.startsWith('CALL_LOG|')) {
@@ -516,22 +556,28 @@ const AppShell = () => {
 
                   return isSent ? (
                     <div key={msg.id} className={`flex flex-col items-end w-full group ${showTail ? 'mb-2' : 'mb-0.5'}`}>
-                      <div className={`bg-[#d9fdd3] px-2 pt-1.5 pb-1 rounded-lg max-w-[85%] md:max-w-[75%] text-[#111b21] shadow-sm min-w-[80px] w-fit flex flex-col relative ${showTail ? 'rounded-tr-sm msg-tail-sent' : ''}`}>
+                      <motion.div drag="x" dragConstraints={{ left: 0, right: 80 }} onDragEnd={handleDragEnd} className={`bg-brand-sage px-3 pt-2 pb-1.5 rounded-[20px] max-w-[85%] md:max-w-[75%] text-brand-charcoal shadow-sm min-w-[80px] w-fit flex flex-col relative ${showTail ? 'rounded-tr-sm msg-tail-sent border border-brand-sage/50' : 'border border-brand-sage/50'}`}>
+                        {replyData && (
+                          <div className="bg-black/5 rounded-lg p-2 mb-1 border-l-4 border-brand-teal text-[13px] opacity-80">
+                            <span className="font-bold text-brand-teal block">{replyData.sender}</span>
+                            <span className="truncate block">{replyData.content}</span>
+                          </div>
+                        )}
                         
                         {msg.message_type === 'image' || (msg.message_type === 'sticker') ? (
                           <div className="mb-1 rounded-xl overflow-hidden bg-black/5">
                             <img src={msg.file_url} alt="Attachment" className={`object-cover ${msg.message_type === 'sticker' ? 'w-32 h-32 bg-transparent' : 'w-full max-h-64'}`} />
-                            {msg.content && <span className="text-[15px] leading-relaxed break-words px-1 mt-1 block">{msg.content}</span>}
+                            {displayContent && <span className="text-[15px] leading-relaxed break-words px-1 mt-1 block">{displayContent}</span>}
                           </div>
                         ) : msg.message_type === 'video' ? (
                           <div className="mb-1 rounded-xl overflow-hidden bg-black/10">
                             <video src={msg.file_url} controls className="w-full max-h-64 object-contain" />
-                            {msg.content && <span className="text-[15px] leading-relaxed break-words px-1 mt-1 block">{msg.content}</span>}
+                            {displayContent && <span className="text-[15px] leading-relaxed break-words px-1 mt-1 block">{displayContent}</span>}
                           </div>
                         ) : msg.message_type === 'audio' ? (
                           <div className="mb-1 rounded-xl overflow-hidden flex flex-col gap-1 min-w-[200px]">
                             <audio src={msg.file_url} controls className="w-full h-10" />
-                            {msg.content && <span className="text-[15px] leading-relaxed break-words px-1 mt-1 block">{msg.content}</span>}
+                            {displayContent && <span className="text-[15px] leading-relaxed break-words px-1 mt-1 block">{displayContent}</span>}
                           </div>
                         ) : msg.message_type === 'document' ? (
                           <div className="mb-1 p-3 rounded-xl bg-black/5 flex items-center gap-3 border border-black/10 hover:bg-black/10 transition-colors cursor-pointer" onClick={() => window.open(msg.file_url, '_blank')}>
@@ -544,7 +590,7 @@ const AppShell = () => {
                             </div>
                           </div>
                         ) : (
-                          <span className="text-[15px] leading-relaxed break-words">{msg.content}</span>
+                          <span className="text-[15px] leading-relaxed break-words">{displayContent}</span>
                         )}
 
                         <div className="flex items-center justify-end gap-1 select-none mt-1 self-end opacity-80">
@@ -555,26 +601,32 @@ const AppShell = () => {
                           {msg.status === 'read' && <span className="material-symbols-outlined text-[15px] text-[#2FA4E7]" style={{ fontVariationSettings: "'FILL' 1" }}>done_all</span>}
                           {!['sending', 'sent', 'delivered', 'read'].includes(msg.status) && <span className="material-symbols-outlined text-[15px] text-[#2FA4E7]">done_all</span>}
                         </div>
-                      </div>
+                      </motion.div>
                     </div>
                   ) : (
                     <div key={msg.id} className={`flex flex-col items-start w-full group ${showTail ? 'mb-2' : 'mb-0.5'}`}>
-                      <div className={`bg-white px-2 pt-1.5 pb-1 rounded-lg max-w-[85%] md:max-w-[75%] shadow-sm text-[#111b21] min-w-[80px] w-fit flex flex-col relative ${showTail ? 'rounded-tl-sm msg-tail-received' : ''}`}>
+                      <motion.div drag="x" dragConstraints={{ left: 0, right: 80 }} onDragEnd={handleDragEnd} className={`bg-white px-3 pt-2 pb-1.5 rounded-[20px] max-w-[85%] md:max-w-[75%] shadow-[0_2px_8px_rgba(0,0,0,0.04)] text-brand-charcoal min-w-[80px] w-fit flex flex-col relative border border-outline-variant/10 ${showTail ? 'rounded-tl-sm msg-tail-received' : ''}`}>
+                        {replyData && (
+                          <div className="bg-black/5 rounded-lg p-2 mb-1 border-l-4 border-brand-teal text-[13px] opacity-80">
+                            <span className="font-bold text-brand-teal block">{replyData.sender}</span>
+                            <span className="truncate block">{replyData.content}</span>
+                          </div>
+                        )}
                         
                         {msg.message_type === 'image' || (msg.message_type === 'sticker') ? (
                           <div className="mb-1 rounded-xl overflow-hidden bg-black/5">
                             <img src={msg.file_url} alt="Attachment" className={`object-cover ${msg.message_type === 'sticker' ? 'w-32 h-32 bg-transparent' : 'w-full max-h-64'}`} />
-                            {msg.content && <span className="text-[15px] leading-relaxed break-words px-1 mt-1 block">{msg.content}</span>}
+                            {displayContent && <span className="text-[15px] leading-relaxed break-words px-1 mt-1 block">{displayContent}</span>}
                           </div>
                         ) : msg.message_type === 'video' ? (
                           <div className="mb-1 rounded-xl overflow-hidden bg-black/10">
                             <video src={msg.file_url} controls className="w-full max-h-64 object-contain" />
-                            {msg.content && <span className="text-[15px] leading-relaxed break-words px-1 mt-1 block">{msg.content}</span>}
+                            {displayContent && <span className="text-[15px] leading-relaxed break-words px-1 mt-1 block">{displayContent}</span>}
                           </div>
                         ) : msg.message_type === 'audio' ? (
                           <div className="mb-1 rounded-xl overflow-hidden flex flex-col gap-1 min-w-[200px]">
                             <audio src={msg.file_url} controls className="w-full h-10" />
-                            {msg.content && <span className="text-[15px] leading-relaxed break-words px-1 mt-1 block">{msg.content}</span>}
+                            {displayContent && <span className="text-[15px] leading-relaxed break-words px-1 mt-1 block">{displayContent}</span>}
                           </div>
                         ) : msg.message_type === 'document' ? (
                           <div className="mb-1 p-3 rounded-xl bg-black/5 flex items-center gap-3 border border-black/10 hover:bg-black/10 transition-colors cursor-pointer" onClick={() => window.open(msg.file_url, '_blank')}>
@@ -587,13 +639,13 @@ const AppShell = () => {
                             </div>
                           </div>
                         ) : (
-                          <span className="text-[15px] leading-relaxed break-words">{msg.content}</span>
+                          <span className="text-[15px] leading-relaxed break-words">{displayContent}</span>
                         )}
 
                         <div className="flex items-center justify-end mt-1 self-end opacity-60">
                           <span className="text-[10px] text-brand-charcoal font-medium select-none">{formatTime(msg.sent_at)}</span>
                         </div>
-                      </div>
+                      </motion.div>
                     </div>
                   );
                 })}
@@ -614,8 +666,24 @@ const AppShell = () => {
                 <div ref={messagesEndRef} />
               </div>
 
+              {/* Reply Banner */}
+              {replyToId && (() => {
+                 const originalMsg = activeMessages.find(m => m.id === replyToId);
+                 if (!originalMsg) return null;
+                 const senderName = originalMsg.sender_id === user.id ? 'You' : (activeContact?.other_user?.display_name || 'User');
+                 return (
+                   <div className="px-lg py-2 bg-surface-container-low border-t border-outline-variant/20 flex items-center justify-between animate-fade-in-down">
+                     <div className="flex flex-col border-l-4 border-brand-teal pl-3">
+                        <span className="text-brand-teal font-bold text-[13px]">{senderName}</span>
+                        <span className="text-on-surface-variant text-[13px] truncate max-w-[250px] md:max-w-[400px]">{(originalMsg.content || '').replace(/^\[REPLY:[^\]]+\]/, '').substring(0,50) || 'Attachment'}</span>
+                     </div>
+                     <button onClick={() => setReplyToId(null)} className="p-1 text-on-surface-variant hover:text-error rounded-full transition-colors"><span className="material-symbols-outlined text-[18px]">close</span></button>
+                   </div>
+                 );
+              })()}
+              
               {/* Composer */}
-              <footer className="px-md md:px-lg py-sm md:py-md bg-[#f0f2f5] border-t border-[#d1d7db] flex items-center gap-2 md:gap-3 relative">
+              <footer className="px-md md:px-lg py-sm md:py-md bg-surface-container-lowest/95 backdrop-blur-xl border-t border-outline-variant/20 flex items-center gap-2 md:gap-3 relative z-30">
                 
                 <div className="relative">
                   <button type="button" onClick={() => setShowAttachMenu(!showAttachMenu)} className={`p-2 text-[#54656f] hover:bg-[#d1d7db] transition-colors rounded-full ${showAttachMenu ? 'bg-[#d1d7db]' : ''}`}>

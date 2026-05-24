@@ -21,9 +21,11 @@ export const useMessageStore = create((set, get) => ({
     }
   },
 
-  sendMessage: async (convId, content, senderId, type = 'text', fileData = null) => {
+  sendMessage: async (convId, rawContent, senderId, type = 'text', fileData = null, replyToId = null) => {
     // Optimistic UI update
     const tempId = `temp-${Date.now()}`;
+    const content = replyToId ? `[REPLY:${replyToId}]${rawContent}` : rawContent;
+    
     const tempMsg = {
       id: tempId,
       conversation_id: convId,
@@ -31,6 +33,8 @@ export const useMessageStore = create((set, get) => ({
       content,
       message_type: type,
       file_url: fileData?.url || null,
+      file_name: fileData?.fileName || null,
+      file_size_bytes: fileData?.fileSize || null,
       is_deleted: false,
       sent_at: new Date().toISOString(),
       status: 'sending'
