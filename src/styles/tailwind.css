@@ -1,0 +1,139 @@
+/* Import global styles BEFORE tailwind directives */
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;0,700;1,400&family=Literata:ital,wght@0,400;0,700;1,400&family=Geist:wght@100..900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ============================================
+   BASE STYLES
+   ============================================ */
+@layer base {
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
+  body {
+    font-family: 'DM Sans', system-ui, sans-serif;
+    background-color: #fcf8fb;
+    color: #1b1b1d;
+    line-height: 1.5;
+    overflow: hidden;
+  }
+
+  input,
+  textarea,
+  button {
+    font-family: inherit;
+  }
+
+  ::-webkit-scrollbar {
+    width: 4px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #bcc9c8;
+    border-radius: 10px;
+  }
+}
+
+/* ============================================
+   MATERIAL SYMBOLS CONFIG
+   ============================================ */
+.material-symbols-outlined {
+  font-variation-settings: "FILL" 0, "wght" 400, "GRAD" 0, "opsz" 24;
+}
+
+/* ============================================
+   GRAIN TEXTURE OVERLAY
+   ============================================ */
+.grain-overlay {
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  opacity: 0.03;
+  pointer-events: none;
+}
+
+/* ============================================
+   DOT GRID BACKGROUND
+   ============================================ */
+.dot-grid {
+  background-image: radial-gradient(#6d7a79 0.5px, transparent 0.5px);
+  background-size: 24px 24px;
+  background-color: #FAFAF8;
+  opacity: 0.05;
+}
+
+/* ============================================
+   WAVEFORM ANIMATION (Login)
+   ============================================ */
+.waveform-path {
+  stroke-dasharray: 100;
+  stroke-dashoffset: 100;
+  animation: wave-draw 2s ease-out forwards;
+}
+
+@keyframes wave-draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+/* ============================================
+   ANIMATIONS
+   ============================================ */
+@keyframes slide-up {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes bounce-dots {
+  0% { transform: translateY(0); }
+  33% { transform: translateY(-5px); }
+  66% { transform: translateY(0); }
+}
+
+.animate-slide-up {
+  animation: slide-up 0.3s ease-out;
+}
+
+.animate-fade-in {
+  animation: fade-in 0.2s ease-out;
+}
+
+.animate-bounce-dot {
+  animation: bounce-dots 0.9s infinite;
+}
+.animate-bounce-dot:nth-child(1) { animation-delay: 0s; }
+.animate-bounce-dot:nth-child(2) { animation-delay: 0.15s; }
+.animate-bounce-dot:nth-child(3) { animation-delay: 0.3s; }
+
+/* ============================================
+   CUSTOM COMPONENT UTILITIES
+   ============================================ */
+@layer utilities {
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+}

@@ -1,0 +1,16 @@
+export const MESSAGE_TYPES = {
+  TEXT: 'TEXT',
+  IMAGE: 'IMAGE',
+  FILE: 'FILE',
+  DELETED: 'DELETED'
+};
+
+export const MESSAGE_STATUS = {
+  SENDING: 'SENDING',
+  SENT: 'SENT',
+  DELIVERED: 'DELIVERED',
+  READ: 'READ',
+  FAILED: 'FAILED'
+};
+
+export const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB

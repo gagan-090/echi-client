@@ -1,0 +1,14 @@
+/* themes.css */
+[data-theme="dark"] {
+  --color-bg-primary:       #121212;
+  --color-bg-secondary:     #1E1E1E;
+  --color-bg-elevated:      #2C2C2C;
+  --color-surface-hover:    #333333;
+  --color-text-primary:     #E5E5E3;
+  --color-text-secondary:   #A0A09D;
+  --color-text-muted:       #6B6B6E;
+  --color-border:           #333333;
+  --color-border-strong:    #555555;
+  --color-bubble-sent:      var(--color-bubble-sent-dark);
+  --color-bubble-recv:      #1E1E1E;
+}
