@@ -9,7 +9,12 @@ export const useWebRTC = (socketInstance) => {
   const [callState, setCallState] = useState('idle'); // idle, ringing, incoming, connected
   const [remoteUser, setRemoteUser] = useState(null);
   const [callType, setCallType] = useState('video'); // 'video' | 'audio'
+  const [isAudioEnabled, setIsAudioEnabled] = useState(true);
+  const [isVideoEnabled, setIsVideoEnabled] = useState(true);
   
+  const [localStreamState, setLocalStreamState] = useState(null);
+  const [remoteStreamState, setRemoteStreamState] = useState(null);
+
   const localStreamRef = useRef(null);
   const remoteStreamRef = useRef(null);
   const peerConnectionRef = useRef(null);
@@ -17,12 +22,34 @@ export const useWebRTC = (socketInstance) => {
   // Call tracking refs
   const callStartTimeRef = useRef(null);
   const isCallerRef = useRef(false);
+  const pendingCandidates = useRef({}); // { [peerId]: RTCIceCandidate[] }
+  const isRemoteDescriptionSet = useRef(false);
 
   const ICE_SERVERS = {
     iceServers: [
       { urls: 'stun:stun.l.google.com:19302' },
       { urls: 'stun:stun1.l.google.com:19302' }
     ]
+  };
+
+    const toggleAudio = () => {
+    if (localStreamRef.current) {
+      const audioTrack = localStreamRef.current.getAudioTracks()[0];
+      if (audioTrack) {
+        audioTrack.enabled = !audioTrack.enabled;
+        setIsAudioEnabled(audioTrack.enabled);
+      }
+    }
+  };
+
+  const toggleVideo = () => {
+    if (localStreamRef.current) {
+      const videoTrack = localStreamRef.current.getVideoTracks()[0];
+      if (videoTrack) {
+        videoTrack.enabled = !videoTrack.enabled;
+        setIsVideoEnabled(videoTrack.enabled);
+      }
+    }
   };
 
   const initLocalStream = async (type) => {
@@ -32,6 +59,7 @@ export const useWebRTC = (socketInstance) => {
         audio: true
       });
       localStreamRef.current = stream;
+      setLocalStreamState(stream);
       return stream;
     } catch (err) {
       console.error('Failed to get local stream', err);
@@ -43,6 +71,7 @@ export const useWebRTC = (socketInstance) => {
     if (localStreamRef.current) {
       localStreamRef.current.getTracks().forEach(track => track.stop());
       localStreamRef.current = null;
+      setLocalStreamState(null);
     }
   };
 
@@ -58,6 +87,7 @@ export const useWebRTC = (socketInstance) => {
 
     pc.ontrack = (event) => {
       remoteStreamRef.current = event.streams[0];
+      setRemoteStreamState(event.streams[0]);
     };
 
     pc.onicecandidate = (event) => {
@@ -183,8 +213,13 @@ export const useWebRTC = (socketInstance) => {
     }
     stopLocalStream();
     remoteStreamRef.current = null;
+    setRemoteStreamState(null);
     callStartTimeRef.current = null;
     isCallerRef.current = false;
+    setIsAudioEnabled(true);
+    setIsVideoEnabled(true);
+    isRemoteDescriptionSet.current = false;
+    pendingCandidates.current = {};
     setCallState('idle');
     setRemoteUser(null);
   };
@@ -195,38 +230,81 @@ export const useWebRTC = (socketInstance) => {
     const handleSignal = async ({ senderId, signalData, type, conversationId }) => {
       if (type === 'offer') {
         const incomingMediaType = signalData.mediaType || 'video';
+        
+        // Ensure callerInfo fallback works even if it's stringified differently
+        let dName = 'Unknown';
+        let aUrl = null;
+        if (signalData.callerInfo) {
+           dName = signalData.callerInfo.display_name || 'Unknown';
+           aUrl = signalData.callerInfo.avatar_url || null;
+        }
+
         setRemoteUser({ 
           id: senderId, 
           convId: conversationId,
-          display_name: signalData.callerInfo?.display_name || 'Unknown',
-          avatar_url: signalData.callerInfo?.avatar_url || null
+          display_name: dName,
+          avatar_url: aUrl
         });
         setCallType(incomingMediaType);
         setCallState('incoming');
         isCallerRef.current = false;
         
         const pc = createPeerConnection(senderId, incomingMediaType, conversationId);
-        await pc.setRemoteDescription(new RTCSessionDescription({ type: signalData.type, sdp: signalData.sdp }));
+        try {
+          await pc.setRemoteDescription(new RTCSessionDescription({ type: signalData.type, sdp: signalData.sdp }));
+          isRemoteDescriptionSet.current = true;
+          // Apply pending candidates
+          if (pendingCandidates.current[senderId]) {
+            for (const c of pendingCandidates.current[senderId]) {
+              await pc.addIceCandidate(new RTCIceCandidate(c));
+            }
+            pendingCandidates.current[senderId] = [];
+          }
+        } catch (err) {
+          console.error("Failed to set remote offer", err);
+        }
       } 
       else if (type === 'answer') {
         const pc = peerConnectionRef.current;
         if (pc) {
-          await pc.setRemoteDescription(new RTCSessionDescription(signalData));
-          setCallState('connected');
-          callStartTimeRef.current = Date.now();
+          try {
+            await pc.setRemoteDescription(new RTCSessionDescription(signalData));
+            isRemoteDescriptionSet.current = true;
+            setCallState('connected');
+            callStartTimeRef.current = Date.now();
+            
+            // Apply pending candidates
+            if (pendingCandidates.current[senderId]) {
+              for (const c of pendingCandidates.current[senderId]) {
+                await pc.addIceCandidate(new RTCIceCandidate(c));
+              }
+              pendingCandidates.current[senderId] = [];
+            }
+          } catch (err) {
+            console.error("Failed to set remote answer", err);
+          }
         }
       } 
       else if (type === 'ice-candidate') {
         const pc = peerConnectionRef.current;
         if (pc) {
-          await pc.addIceCandidate(new RTCIceCandidate(signalData));
+          if (isRemoteDescriptionSet.current) {
+             try {
+               await pc.addIceCandidate(new RTCIceCandidate(signalData));
+             } catch (err) {
+               console.error("Error adding ice candidate", err);
+             }
+          } else {
+             if (!pendingCandidates.current[senderId]) pendingCandidates.current[senderId] = [];
+             pendingCandidates.current[senderId].push(signalData);
+          }
         }
       } 
       else if (type === 'rejected') {
         handleCallEnd('rejected', true);
       }
       else if (type === 'ended') {
-        handleCallEnd('completed', false); // The caller logs it, receiver just closes
+        handleCallEnd('completed', false);
       }
       else if (type === 'ended_early') {
         handleCallEnd('missed', false);
@@ -242,12 +320,16 @@ export const useWebRTC = (socketInstance) => {
   return {
     callState,
     remoteUser,
-    localStream: localStreamRef.current,
-    remoteStream: remoteStreamRef.current,
+    localStream: localStreamState,
+    remoteStream: remoteStreamState,
     initiateCall,
     acceptCall,
     rejectCall,
     endCall,
-    callType
+    callType,
+    isAudioEnabled,
+    isVideoEnabled,
+    toggleAudio,
+    toggleVideo
   };
 };

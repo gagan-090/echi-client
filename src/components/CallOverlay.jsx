@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 
-const CallOverlay = ({ callState, remoteUser, localStream, remoteStream, acceptCall, rejectCall, endCall, callType }) => {
+const CallOverlay = ({ callState, remoteUser, localStream, remoteStream, acceptCall, rejectCall, endCall, callType, isAudioEnabled, isVideoEnabled, toggleAudio, toggleVideo }) => {
   const localVideoRef = useRef(null);
   const remoteVideoRef = useRef(null);
 
@@ -105,12 +105,32 @@ const CallOverlay = ({ callState, remoteUser, localStream, remoteStream, acceptC
               </button>
             </>
           ) : (
-            <button 
-              onClick={endCall}
-              className="w-20 h-20 rounded-full bg-[#FF3B30] text-white shadow-[0_0_30px_rgba(255,59,48,0.5)] flex items-center justify-center transition-transform hover:scale-105 active:scale-95"
-            >
-              <span className="material-symbols-outlined text-[36px]">call_end</span> 
-            </button>
+            <div className="flex items-center gap-6 animate-fade-in-up">
+              {/* Audio Toggle */}
+              <button 
+                onClick={toggleAudio}
+                className={`w-16 h-16 rounded-full flex items-center justify-center transition-all shadow-lg ${isAudioEnabled ? 'bg-white/20 text-white hover:bg-white/30 backdrop-blur-md' : 'bg-white text-brand-charcoal hover:bg-gray-100'}`}
+              >
+                <span className="material-symbols-outlined text-[28px]">{isAudioEnabled ? 'mic' : 'mic_off'}</span>
+              </button>
+
+              {/* End Call */}
+              <button 
+                onClick={endCall}
+                className="w-20 h-20 rounded-full bg-[#FF3B30] text-white shadow-[0_0_30px_rgba(255,59,48,0.5)] flex items-center justify-center transition-transform hover:scale-105 active:scale-95"
+              >
+                <span className="material-symbols-outlined text-[36px]">call_end</span> 
+              </button>
+              
+              {/* Video Toggle (only for video calls) */}
+              <button 
+                onClick={toggleVideo}
+                disabled={callType !== 'video'}
+                className={`w-16 h-16 rounded-full flex items-center justify-center transition-all shadow-lg ${callType !== 'video' ? 'opacity-50 cursor-not-allowed bg-black/20 text-white/50' : isVideoEnabled ? 'bg-white/20 text-white hover:bg-white/30 backdrop-blur-md' : 'bg-white text-brand-charcoal hover:bg-gray-100'}`}
+              >
+                <span className="material-symbols-outlined text-[28px]">{isVideoEnabled ? 'videocam' : 'videocam_off'}</span>
+              </button>
+            </div>
           )}
         </div>
       </div>
