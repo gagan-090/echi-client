@@ -13,6 +13,7 @@ export const AppRouter = () => {
     <Routes>
       <Route path="/" element={<Navigate to={isAuthenticated ? "/chat" : "/login"} replace />} />
       <Route path="/login" element={isAuthenticated ? <Navigate to="/chat" replace /> : <LoginPage />} />
+      <Route path="/verify-email" element={<LoginPage />} />
       
       <Route element={<ProtectedRoute />}>
         <Route path="/chat" element={<AppShell />} />
