@@ -205,43 +205,63 @@ const LoginPage = () => {
   };
 
   return (
-    <main className="bg-background min-h-screen flex items-center justify-center p-margin-mobile md:p-margin-desktop font-body-md text-body-md text-on-surface relative overflow-hidden">
-      <div className="fixed inset-0 grain-overlay z-0" />
+    <main className="bg-[#f2f4f6] min-h-screen flex items-center justify-center relative overflow-hidden font-sans">
+      <div className="fixed inset-0 z-0 bg-gradient-to-br from-blue-50/50 to-teal-50/30" />
+      
+      {/* Top Left Close Button */}
+      <div className="absolute top-8 left-8 z-20">
+        <button className="bg-[#4a5056] text-white px-4 py-1.5 text-sm font-medium shadow-sm hover:bg-gray-700 transition-colors">
+          Close
+        </button>
+      </div>
 
       <div className="relative z-10 w-full max-w-[400px]">
-        <div className="bg-surface-container-lowest rounded-xl shadow-[0_1px_3px_rgba(0,0,0,0.06)] p-lg md:p-xl flex flex-col items-center">
+        <div className="bg-white rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] p-10 flex flex-col items-center">
           
-          <header className="flex flex-col items-center mb-xl text-center">
-            <div className="mb-sm text-primary">
-              <svg fill="none" height="24" viewBox="0 0 48 24" width="48" xmlns="http://www.w3.org/2000/svg">
-                <path className="waveform-path" d="M2 12C2 12 6 2 10 2C14 2 18 22 22 22C26 22 30 12 34 12C38 12 42 22 46 22" stroke="currentColor" strokeLinecap="round" strokeWidth="3" />
-              </svg>
-            </div>
-            <h1 className="font-display-lg text-headline-lg text-primary tracking-tight mb-xs">Echo</h1>
-            <p className="font-display-lg text-body-lg italic text-outline opacity-80">
-              Clear conversations.
-            </p>
-          </header>
-
           {emailPending ? (
-            <div className="w-full text-center space-y-md">
-              <div className="w-16 h-16 bg-primary-container text-on-primary-container rounded-full flex items-center justify-center mx-auto mb-md">
-                <span className="material-symbols-outlined text-[32px]">mail</span>
+            <div className="w-full text-center flex flex-col items-center animate-fade-in">
+              {/* Wave Logo */}
+              <div className="mb-2 text-[#067268]">
+                <svg fill="none" height="28" viewBox="0 0 48 24" width="56" xmlns="http://www.w3.org/2000/svg">
+                  <path className="waveform-path" d="M2 12C2 12 6 2 10 2C14 2 18 22 22 22C26 22 30 12 34 12C38 12 42 22 46 22" stroke="currentColor" strokeLinecap="round" strokeWidth="3" />
+                </svg>
               </div>
-              <h2 className="text-title-lg font-title-lg text-on-surface">Check your email</h2>
-              <p className="text-body-md text-on-surface-variant">
+              <h1 className="text-3xl font-serif text-[#067268] tracking-tight mb-2">Echo</h1>
+              <p className="text-lg italic text-gray-500 mb-10 font-serif">
+                Clear conversations.
+              </p>
+
+              <div className="w-16 h-16 bg-[#067268] text-white rounded-full flex items-center justify-center mb-6 shadow-sm">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M4 7.00005L10.2 11.65C11.2667 12.45 12.7333 12.45 13.8 11.65L20 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  <rect x="3" y="5" width="18" height="14" rx="2" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                </svg>
+              </div>
+              <h2 className="text-[19px] text-gray-800 mb-6 font-medium">Check your email</h2>
+              <p className="text-[15px] text-gray-600 mb-2 leading-relaxed">
                 We sent a verification link to <br/>
-                <strong>{email}</strong>
+                <strong className="text-gray-800 font-semibold tracking-wide">{email}</strong>
               </p>
               <button 
                 onClick={() => setEmailPending(false)}
-                className="mt-lg text-primary font-label-md hover:underline"
+                className="mt-6 text-[#067268] font-medium hover:underline text-[15px]"
               >
                 Back to login
               </button>
             </div>
           ) : (
             <>
+              <header className="flex flex-col items-center mb-10 text-center">
+                <div className="mb-2 text-[#067268]">
+                  <svg fill="none" height="28" viewBox="0 0 48 24" width="56" xmlns="http://www.w3.org/2000/svg">
+                    <path className="waveform-path" d="M2 12C2 12 6 2 10 2C14 2 18 22 22 22C26 22 30 12 34 12C38 12 42 22 46 22" stroke="currentColor" strokeLinecap="round" strokeWidth="3" />
+                  </svg>
+                </div>
+                <h1 className="text-3xl font-serif text-[#067268] tracking-tight mb-2">Echo</h1>
+                <p className="text-lg italic text-gray-500 font-serif">
+                  Clear conversations.
+                </p>
+              </header>
               {/* Tab Switcher */}
               <div className="w-full flex bg-surface-container rounded-full p-1 mb-lg">
                 <button
