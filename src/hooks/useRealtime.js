@@ -39,11 +39,23 @@ export const useRealtime = () => {
       useConversationStore.getState().fetchConversations();
       
       const currentActive = useConversationStore.getState().activeConversationId;
-      if (currentActive === conversation_id) {
+      if (currentActive === conversation_id && !document.hidden) {
          import('../services/api').then(api => {
            api.default.patch(`/conversations/${conversation_id}/messages/read`).catch(console.error);
          });
+      } else {
+         if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
+           const title = 'New Message';
+           const body = payload.content || (payload.message_type === 'image' ? '📷 Photo' : '📎 Attachment');
+           new Notification(title, { body });
+         }
       }
+    });
+
+    socket.on('message_deleted', (payload) => {
+      const { conversation_id } = payload;
+      useMessageStore.getState().fetchMessages(conversation_id, true);
+      useConversationStore.getState().fetchConversations();
     });
 
     // Handle Read Receipts updates

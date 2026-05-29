@@ -47,7 +47,7 @@ const CallOverlay = ({ callState, remoteUser, localStream, remoteStream, acceptC
         remoteAudioRef.current.srcObject = remoteStream;
       }
     }
-  }, [remoteStream, callType]);
+  }, [remoteStream, callType, callState]);
 
   if (callState === 'idle') return null;
 

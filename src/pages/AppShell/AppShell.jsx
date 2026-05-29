@@ -85,6 +85,11 @@ const AppShell = () => {
   useEffect(() => {
     fetchConversations();
     fetchCalls();
+    if (typeof window !== 'undefined' && 'Notification' in window) {
+      if (Notification.permission === 'default') {
+        Notification.requestPermission();
+      }
+    }
   }, [fetchConversations, fetchCalls]);
 
   useEffect(() => {
@@ -255,6 +260,16 @@ const AppShell = () => {
       console.error(err);
     } finally {
       setIsCreating(false);
+    }
+  };
+
+  const handleDeleteMessage = async (msgId) => {
+    if (!activeConversationId) return;
+    try {
+      useMessageStore.getState().updateMsg(activeConversationId, msgId, { is_deleted: true, content: null, file_url: null, file_name: null, message_type: 'text' });
+      await api.delete(`/conversations/${activeConversationId}/messages/${msgId}`);
+    } catch (err) {
+      console.error('Failed to delete message', err);
     }
   };
 
@@ -554,9 +569,24 @@ const AppShell = () => {
                   const nextMsg = groupedMessages[index + 1];
                   const showTail = !nextMsg || nextMsg.type === 'date' || nextMsg.sender_id !== msg.sender_id || (nextMsg.file_url && nextMsg.file_url.startsWith('CALL_LOG|'));
 
+                  if (msg.is_deleted) {
+                    return (
+                      <div key={msg.id} className={`flex flex-col ${isSent ? 'items-end' : 'items-start'} w-full group ${showTail ? 'mb-2' : 'mb-0.5'}`}>
+                        <div className={`px-3 py-2 rounded-[20px] max-w-[85%] md:max-w-[75%] shadow-[0_1px_2px_rgba(0,0,0,0.05)] w-fit flex items-center gap-2 text-on-surface-variant/60 italic ${isSent ? 'bg-brand-sage/40 border border-brand-sage/30' : 'bg-white/40 border border-outline-variant/10'}`}>
+                           <span className="material-symbols-outlined text-[16px]">block</span>
+                           <span className="text-[14px]">This message was deleted</span>
+                        </div>
+                      </div>
+                    );
+                  }
+
                   return isSent ? (
                     <div key={msg.id} className={`flex flex-col items-end w-full group ${showTail ? 'mb-2' : 'mb-0.5'}`}>
-                      <motion.div drag="x" dragConstraints={{ left: 0, right: 80 }} onDragEnd={handleDragEnd} className={`bg-brand-sage px-3 pt-2 pb-1.5 rounded-[20px] max-w-[85%] md:max-w-[75%] text-brand-charcoal shadow-sm min-w-[80px] w-fit flex flex-col relative ${showTail ? 'rounded-tr-sm msg-tail-sent border border-brand-sage/50' : 'border border-brand-sage/50'}`}>
+                      <div className="flex items-center gap-2">
+                        <button onClick={() => handleDeleteMessage(msg.id)} className="opacity-0 group-hover:opacity-100 p-1.5 text-on-surface-variant hover:text-error hover:bg-surface-container rounded-full transition-all">
+                          <span className="material-symbols-outlined text-[18px]">delete</span>
+                        </button>
+                        <motion.div drag="x" dragConstraints={{ left: 0, right: 80 }} onDragEnd={handleDragEnd} className={`bg-brand-sage px-3 pt-2 pb-1.5 rounded-[20px] max-w-[85%] md:max-w-[75%] text-brand-charcoal shadow-sm min-w-[80px] w-fit flex flex-col relative ${showTail ? 'rounded-tr-sm msg-tail-sent border border-brand-sage/50' : 'border border-brand-sage/50'}`}>
                         {replyData && (
                           <div className="bg-black/5 rounded-lg p-2 mb-1 border-l-4 border-brand-teal text-[13px] opacity-80">
                             <span className="font-bold text-brand-teal block">{replyData.sender}</span>
@@ -602,6 +632,7 @@ const AppShell = () => {
                           {!['sending', 'sent', 'delivered', 'read'].includes(msg.status) && <span className="material-symbols-outlined text-[15px] text-[#2FA4E7]">done_all</span>}
                         </div>
                       </motion.div>
+                      </div>
                     </div>
                   ) : (
                     <div key={msg.id} className={`flex flex-col items-start w-full group ${showTail ? 'mb-2' : 'mb-0.5'}`}>

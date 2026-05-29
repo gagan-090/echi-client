@@ -249,6 +249,10 @@ export const useWebRTC = (socketInstance) => {
         setCallState('incoming');
         isCallerRef.current = false;
         
+        if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted' && document.hidden) {
+           new Notification(`Incoming ${incomingMediaType} call`, { body: `from ${dName}` });
+        }
+        
         const pc = createPeerConnection(senderId, incomingMediaType, conversationId);
         try {
           await pc.setRemoteDescription(new RTCSessionDescription({ type: signalData.type, sdp: signalData.sdp }));
