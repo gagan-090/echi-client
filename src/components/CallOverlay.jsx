@@ -35,7 +35,7 @@ const CallOverlay = ({ callState, remoteUser, localStream, remoteStream, acceptC
     if (localVideoRef.current && localStream) {
       localVideoRef.current.srcObject = localStream;
     }
-  }, [localStream]);
+  }, [localStream, callState]);
 
   useEffect(() => {
     if (remoteStream) {
