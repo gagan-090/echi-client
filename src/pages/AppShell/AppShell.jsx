@@ -580,7 +580,15 @@ const AppShell = () => {
         />
 
         {/* ── ACTIVE CHAT PANEL ── */}
-        <section className={`relative ${activeConversationId ? 'flex' : 'hidden md:flex'} flex-col flex-1 dark:bg-brand-bg-dark bg-brand-bg-light h-full min-w-0 transition-colors duration-300 theme-transition`}>
+        <section 
+          className={`relative ${activeConversationId ? 'flex' : 'hidden md:flex'} flex-col flex-1 h-full min-w-0 transition-colors duration-300 theme-transition bg-cover bg-center`}
+          style={{
+            backgroundImage: theme === 'dark' ? 'url(/chat_bg_dark.png)' : 'url(/chat_bg_light.png)'
+          }}
+        >
+          {/* Overlay to ensure maximum contrast and legibility */}
+          <div className="absolute inset-0 dark:bg-[#020813]/85 bg-white/92 z-0 pointer-events-none transition-colors duration-300" />
+
           {activeContact ? (
             <>
               {/* Background Watermark */}
@@ -702,7 +710,7 @@ const AppShell = () => {
                         <button onClick={() => handleDeleteMessage(msg.id)} className="opacity-0 group-hover:opacity-100 p-1.5 text-slate-400 hover:text-rose-500 dark:hover:text-rose-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-all flex-shrink-0">
                           <span className="material-symbols-outlined text-[18px]">delete</span>
                         </button>
-                        <motion.div drag="x" dragConstraints={{ left: 0, right: 80 }} onDragEnd={handleDragEnd} className="bg-brand-accent px-4 py-2.5 rounded-2xl text-white shadow-sm min-w-[80px] w-fit flex flex-col relative border border-brand-accent/20">
+                        <motion.div drag="x" dragConstraints={{ left: 0, right: 80 }} onDragEnd={handleDragEnd} className="bg-brand-accent px-4 py-2.5 rounded-2xl rounded-tr-none text-white shadow-sm min-w-[80px] w-fit flex flex-col relative border border-brand-accent/20">
                         {replyData && (
                           <div className="bg-white/10 rounded-lg p-2 mb-2 border-l-4 border-white text-[12px] text-white/90">
                             <span className="font-bold block">{replyData.sender}</span>
@@ -753,7 +761,7 @@ const AppShell = () => {
                   ) : (
                     <div key={msg.id} className={`flex flex-col items-start w-full group ${showTail ? 'mb-2' : 'mb-0.5'}`}>
                       <div className="flex items-center gap-2 max-w-[85%] md:max-w-[70%]">
-                        <motion.div drag="x" dragConstraints={{ left: 0, right: 80 }} onDragEnd={handleDragEnd} className="dark:bg-[#0c1322] bg-[#f1f5f9] px-4 py-2.5 rounded-2xl dark:text-slate-100 text-slate-800 shadow-sm min-w-[80px] w-fit flex flex-col relative border dark:border-slate-800 border-slate-200">
+                        <motion.div drag="x" dragConstraints={{ left: 0, right: 80 }} onDragEnd={handleDragEnd} className="dark:bg-[#060f1e]/90 bg-white/95 backdrop-blur-md px-4 py-2.5 rounded-2xl rounded-tl-none dark:text-slate-100 text-slate-800 shadow-sm min-w-[80px] w-fit flex flex-col relative border dark:border-brand-border border-slate-200">
                           {replyData && (
                             <div className="bg-slate-200/50 dark:bg-slate-850/50 rounded-lg p-2 mb-2 border-l-4 border-brand-accent text-[12px]">
                               <span className="font-bold text-brand-accent block">{replyData.sender}</span>
@@ -869,7 +877,7 @@ const AppShell = () => {
                         value={messageInput}
                         onChange={handleTyping}
                         className="flex-1 border-none bg-transparent focus:ring-0 dark:text-slate-100 text-slate-800 font-medium text-sm placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none"
-                        placeholder={uploadingFile ? 'Uploading...' : 'Type a message'}
+                        placeholder={uploadingFile ? 'Uploading...' : 'Write something warm...'}
                         disabled={uploadingFile}
                       />
                     )}
@@ -892,14 +900,32 @@ const AppShell = () => {
               <div className="absolute inset-0 flex items-center justify-center pointer-events-none overflow-hidden z-0 select-none">
                 <div className="chat-watermark">ECHO</div>
               </div>
-              <div className="max-w-md z-10">
-                <div className="w-20 h-20 rounded-full bg-brand-accent/10 flex items-center justify-center mx-auto mb-6 shadow-sm border border-brand-accent/20">
-                  <span className="material-symbols-outlined text-[40px] text-brand-accent">lock</span>
+              <div className="max-w-md z-10 animate-fade-in flex flex-col items-center">
+                <div className="w-20 h-20 rounded-2xl bg-gradient-to-tr from-brand-accent/20 to-blue-500/5 dark:from-brand-accent/15 dark:to-transparent flex items-center justify-center mb-6 shadow-md border border-brand-accent/30 rotate-3">
+                  <span className="material-symbols-outlined text-[36px] text-brand-accent animate-bounce-subtle">chat_bubble</span>
                 </div>
-                <h3 className="text-xl font-bold dark:text-slate-100 text-slate-800 mb-2">Echo for Web</h3>
-                <p className="text-sm dark:text-slate-400 text-slate-500 leading-relaxed max-w-sm mx-auto">
-                  Send and receive messages securely. Echo uses end-to-end encryption to keep your personal conversations private.
+                <h3 className="text-xl font-bold dark:text-slate-100 text-slate-800 mb-2">
+                  Welcome to Echo, {user?.display_name ? user.display_name.split(' ')[0] : 'Friend'}! 👋
+                </h3>
+                <p className="text-sm dark:text-slate-400 text-slate-500 leading-relaxed max-w-sm mx-auto mb-6">
+                  Select a contact from your sidebar to start exchanging clear, encrypted messages, or invite a friend to get started!
                 </p>
+                <div className="flex flex-wrap gap-3 justify-center">
+                  <button 
+                    onClick={() => setShowNewChat(true)}
+                    className="px-4 py-2.5 bg-brand-accent hover:bg-brand-accent/90 text-white text-xs font-semibold rounded-xl shadow-md shadow-brand-accent/10 transition-all flex items-center gap-1.5 active:scale-95"
+                  >
+                    <span className="material-symbols-outlined text-[16px]">add</span>
+                    New Conversation
+                  </button>
+                  <button 
+                    onClick={() => setShowInviteModal(true)}
+                    className="px-4 py-2.5 dark:bg-brand-active-bg bg-brand-active-bg-light border dark:border-brand-accent/20 border-brand-accent/10 dark:text-brand-accent text-brand-accent text-xs font-semibold rounded-xl transition-all flex items-center gap-1.5 active:scale-95"
+                  >
+                    <span className="material-symbols-outlined text-[16px]">person_add</span>
+                    Invite a Friend
+                  </button>
+                </div>
               </div>
             </div>
           )}
