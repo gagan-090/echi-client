@@ -58,7 +58,7 @@ const AppShell = () => {
   
   const { conversations, activeConversationId, fetchConversations, setActive, addConversation } = useConversationStore();
   const { messages, fetchMessages, sendMessage } = useMessageStore();
-  const { typingStatus, broadcastTyping } = useUiStore();
+  const { typingStatus, broadcastTyping, onlineUsers = [] } = useUiStore();
   const { calls, fetchCalls } = useCallStore();
 
   // Initialize Realtime
