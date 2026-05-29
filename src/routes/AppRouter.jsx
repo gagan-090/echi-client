@@ -3,6 +3,7 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import ProtectedRoute from './ProtectedRoute';
 import LoginPage from '../pages/LoginPage';
 import AppShell from '../pages/AppShell';
+import AcceptInvite from '../pages/AcceptInvite';
 import NotFound from '../pages/NotFound';
 import { useAuthStore } from '../store/authStore';
 
@@ -14,6 +15,7 @@ export const AppRouter = () => {
       <Route path="/" element={<Navigate to={isAuthenticated ? "/chat" : "/login"} replace />} />
       <Route path="/login" element={isAuthenticated ? <Navigate to="/chat" replace /> : <LoginPage />} />
       <Route path="/verify-email" element={<LoginPage />} />
+      <Route path="/accept-invite" element={<AcceptInvite />} />
       
       <Route element={<ProtectedRoute />}>
         <Route path="/chat" element={<AppShell />} />

@@ -84,6 +84,10 @@ const AppShell = () => {
   const [showNewChat, setShowNewChat] = useState(false);
   const [newChatQuery, setNewChatQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
+  const [showInviteModal, setShowInviteModal] = useState(false);
+  const [inviteEmail, setInviteEmail] = useState('');
+  const [inviteLoading, setInviteLoading] = useState(false);
+  const [inviteMessage, setInviteMessage] = useState(null);
   
   const messagesEndRef = useRef(null);
 
@@ -320,6 +324,23 @@ const AppShell = () => {
     }
   };
 
+  const handleInviteSubmit = async (e) => {
+    e.preventDefault();
+    setInviteLoading(true);
+    setInviteMessage(null);
+    try {
+      const { data } = await api.post('/auth/email/invite', { email: inviteEmail });
+      setInviteMessage({ type: 'success', text: data.data.message || 'Invitation sent successfully!' });
+      setInviteEmail('');
+    } catch (err) {
+      console.error('Failed to send invite:', err);
+      const errMsg = err.response?.data?.message || 'Failed to send invitation. Please try again.';
+      setInviteMessage({ type: 'error', text: errMsg });
+    } finally {
+      setInviteLoading(false);
+    }
+  };
+
   const handleDeleteMessage = async (msgId) => {
     if (!activeConversationId) return;
     try {
@@ -389,6 +410,7 @@ const AppShell = () => {
             { key: 'messages', icon: 'chat_bubble', label: 'Messages', badge: conversations.reduce((acc, c) => acc + (c.unread_count || 0), 0) || 3 },
             { key: 'calls', icon: 'call', label: 'Calls' },
             { key: 'contacts', icon: 'group', label: 'Contacts' },
+            { key: 'invite', icon: 'person_add', label: 'Invite Friend', action: () => setShowInviteModal(true) },
             { key: 'settings', icon: 'settings', label: 'Settings', action: () => setShowSettings(true) },
           ].map(item => {
             const isActive = item.key === activeNav;
@@ -997,12 +1019,106 @@ const AppShell = () => {
               </div>
               
               <button 
+                onClick={() => {
+                  setShowSettings(false);
+                  setShowInviteModal(true);
+                }}
+                className="mt-4 w-full py-2.5 dark:bg-brand-accent/15 bg-brand-accent/10 text-brand-accent hover:bg-brand-accent/20 font-bold text-xs rounded-xl transition-all flex justify-center items-center gap-1.5 border border-transparent hover:border-brand-accent/20"
+              >
+                <span className="material-symbols-outlined text-[18px]">person_add</span>
+                Invite Friend
+              </button>
+
+              <button 
                 onClick={() => clearAuth()}
-                className="mt-6 w-full py-2.5 dark:bg-rose-500/10 bg-rose-50 text-rose-500 hover:bg-rose-500/20 font-bold text-xs rounded-xl transition-all flex justify-center items-center gap-1.5"
+                className="mt-4 w-full py-2.5 dark:bg-rose-500/10 bg-rose-50 text-rose-500 hover:bg-rose-500/20 font-bold text-xs rounded-xl transition-all flex justify-center items-center gap-1.5"
               >
                 <span className="material-symbols-outlined text-[18px]">logout</span>
                 Sign Out
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── INVITE FRIEND MODAL ── */}
+      {showInviteModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 dark:bg-black/80 backdrop-blur-sm p-4">
+          <div className="dark:bg-[#0c1322] bg-white border dark:border-slate-800 border-slate-200 rounded-2xl shadow-xl w-full max-w-md overflow-hidden flex flex-col transition-all duration-300">
+            <header className="p-5 border-b dark:border-slate-800 border-slate-100 flex justify-between items-center">
+              <h2 className="text-base font-bold dark:text-slate-100 text-slate-800">Invite a Friend</h2>
+              <button 
+                onClick={() => {
+                  setShowInviteModal(false);
+                  setInviteEmail('');
+                  setInviteMessage(null);
+                }} 
+                className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl text-slate-400 dark:text-slate-500 transition-colors"
+              >
+                <span className="material-symbols-outlined text-[20px]">close</span>
+              </button>
+            </header>
+            <div className="p-5">
+              <p className="text-xs dark:text-slate-400 text-slate-500 mb-4 leading-relaxed">
+                Invite your friend by entering their email address. We'll send them a verification link to set up their password and automatically connect them with you on Echo.
+              </p>
+              
+              <form onSubmit={handleInviteSubmit} className="space-y-4">
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wide mb-1.5">
+                    Friend's Email Address
+                  </label>
+                  <input 
+                    type="email" 
+                    required
+                    value={inviteEmail}
+                    onChange={(e) => setInviteEmail(e.target.value)}
+                    placeholder="friend@example.com" 
+                    className="w-full px-4 py-2.5 rounded-xl dark:bg-brand-bg-dark bg-slate-50 border dark:border-slate-800 border-slate-200 focus:outline-none focus:border-brand-accent dark:focus:border-brand-accent dark:text-slate-100 text-slate-800 placeholder-slate-450 dark:placeholder-slate-500 text-sm transition-all"
+                  />
+                </div>
+
+                {inviteMessage && (
+                  <div className={`p-3 rounded-xl text-xs font-semibold ${
+                    inviteMessage.type === 'success' 
+                      ? 'dark:bg-emerald-500/10 bg-emerald-50 text-emerald-600 dark:text-emerald-450 border dark:border-emerald-500/20 border-emerald-100' 
+                      : 'dark:bg-rose-500/10 bg-rose-50 text-rose-600 dark:text-rose-450 border dark:border-rose-500/20 border-rose-100'
+                  }`}>
+                    {inviteMessage.text}
+                  </div>
+                )}
+                
+                <div className="flex justify-end gap-2 pt-2">
+                  <button 
+                    type="button"
+                    onClick={() => {
+                      setShowInviteModal(false);
+                      setInviteEmail('');
+                      setInviteMessage(null);
+                    }}
+                    className="px-4 py-2.5 rounded-xl text-sm font-semibold dark:text-slate-400 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all"
+                  >
+                    Cancel
+                  </button>
+                  <button 
+                    type="submit" 
+                    disabled={inviteLoading}
+                    className="px-5 py-2.5 bg-brand-accent hover:bg-brand-accent/90 disabled:opacity-50 text-white text-sm font-semibold rounded-xl shadow-md shadow-brand-accent/10 transition-all flex items-center gap-1.5"
+                  >
+                    {inviteLoading ? (
+                      <>
+                        <span className="material-symbols-outlined animate-spin text-[18px]">progress_activity</span>
+                        Sending...
+                      </>
+                    ) : (
+                      <>
+                        <span className="material-symbols-outlined text-[18px]">send</span>
+                        Send Invitation
+                      </>
+                    )}
+                  </button>
+                </div>
+              </form>
             </div>
           </div>
         </div>
