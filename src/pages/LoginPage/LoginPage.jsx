@@ -221,10 +221,8 @@ const LoginPage = () => {
           {emailPending ? (
             <div className="w-full text-center flex flex-col items-center animate-fade-in">
               {/* Wave Logo */}
-              <div className="mb-2 text-[#067268]">
-                <svg fill="none" height="28" viewBox="0 0 48 24" width="56" xmlns="http://www.w3.org/2000/svg">
-                  <path className="waveform-path" d="M2 12C2 12 6 2 10 2C14 2 18 22 22 22C26 22 30 12 34 12C38 12 42 22 46 22" stroke="currentColor" strokeLinecap="round" strokeWidth="3" />
-                </svg>
+              <div className="mb-2 flex items-center justify-center">
+                <img src="/logo.png" alt="Echo Logo" className="h-14 w-14 object-contain" />
               </div>
               <h1 className="text-3xl font-serif text-[#067268] tracking-tight mb-2">Echo</h1>
               <p className="text-lg italic text-gray-500 mb-10 font-serif">
@@ -252,10 +250,8 @@ const LoginPage = () => {
           ) : (
             <>
               <header className="flex flex-col items-center mb-10 text-center">
-                <div className="mb-2 text-[#067268]">
-                  <svg fill="none" height="28" viewBox="0 0 48 24" width="56" xmlns="http://www.w3.org/2000/svg">
-                    <path className="waveform-path" d="M2 12C2 12 6 2 10 2C14 2 18 22 22 22C26 22 30 12 34 12C38 12 42 22 46 22" stroke="currentColor" strokeLinecap="round" strokeWidth="3" />
-                  </svg>
+                <div className="mb-2 flex items-center justify-center">
+                  <img src="/logo.png" alt="Echo Logo" className="h-14 w-14 object-contain" />
                 </div>
                 <h1 className="text-3xl font-serif text-[#067268] tracking-tight mb-2">Echo</h1>
                 <p className="text-lg italic text-gray-500 font-serif">

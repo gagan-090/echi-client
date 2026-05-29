@@ -92,10 +92,8 @@ const AcceptInvite = () => {
         <div className="dark:bg-[#060f1e] bg-white rounded-2xl shadow-[0_8px_30px_rgba(0,0,0,0.04)] dark:shadow-[0_8px_30px_rgba(0,0,0,0.2)] border dark:border-brand-border border-slate-200 p-8 md:p-10 flex flex-col transition-all duration-300">
           
           <header className="flex flex-col items-center mb-8 text-center">
-            <div className="mb-3 text-brand-accent">
-              <svg fill="none" height="32" viewBox="0 0 48 24" width="64" xmlns="http://www.w3.org/2000/svg">
-                <path className="waveform-path" d="M2 12C2 12 6 2 10 2C14 2 18 22 22 22C26 22 30 12 34 12C38 12 42 22 46 22" stroke="currentColor" strokeLinecap="round" strokeWidth="3" />
-              </svg>
+            <div className="mb-3 flex items-center justify-center">
+              <img src="/logo.png" alt="Echo Logo" className="h-16 w-16 object-contain" />
             </div>
             <h1 className="text-3xl font-serif text-brand-accent tracking-tight mb-2">Echo</h1>
             <p className="text-sm font-medium dark:text-slate-400 text-slate-500 font-headline-md">

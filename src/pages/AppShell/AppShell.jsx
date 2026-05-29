@@ -361,7 +361,10 @@ const AppShell = () => {
         <div className="px-6 mb-6">
           <div className="flex flex-col mb-6">
             <div className="flex items-center justify-between w-full">
-              <span className="text-3xl font-extrabold text-brand-accent tracking-tight">Echo</span>
+              <div className="flex items-center gap-2">
+                <img src="/logo.png" alt="Echo Logo" className="h-8 w-8 object-contain" />
+                <span className="text-3xl font-extrabold text-brand-accent tracking-tight">Echo</span>
+              </div>
               <div className="flex items-center gap-2">
                 {/* Theme Toggle Button */}
                 <button
