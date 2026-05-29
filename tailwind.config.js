@@ -57,11 +57,20 @@ export default {
         "surface-container-high": "#eae7ea",
         "tertiary": "#4f6056",
 
-        /* ---- Brand Accent Colors ---- */
+        /* ---- Brand Accent Colors & Custom Theme Tokens ---- */
         "brand-sage": "#E2F5E8",
         "brand-teal": "#18A0A0",
         "brand-charcoal": "#333333",
         "brand-forest": "#1b6c3b",
+        "brand-bg-dark": "#020813",
+        "brand-bg-card": "#060f1e",
+        "brand-accent": "#3b82f6",
+        "brand-active-bg": "#0e223d",
+        "brand-border": "#1e293b",
+        "brand-bg-light": "#ffffff",
+        "brand-bg-card-light": "#f8fafc",
+        "brand-active-bg-light": "#eff6ff",
+        "brand-border-light": "#e2e8f0",
 
         /* ---- Semantic aliases ---- */
         "accent": "#18A0A0",

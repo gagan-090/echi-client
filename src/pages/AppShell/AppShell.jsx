@@ -19,10 +19,15 @@ const getInitials = (name) => {
   return parts.length >= 2 ? (parts[0][0] + parts[1][0]).toUpperCase() : name.slice(0, 2).toUpperCase();
 };
 
-const initialColors = ['bg-tertiary-fixed', 'bg-secondary-fixed', 'bg-primary-fixed', 'bg-tertiary-container'];
+const initialColors = [
+  'from-blue-600 to-indigo-600',
+  'from-cyan-600 to-blue-600',
+  'from-indigo-600 to-violet-600',
+  'from-sky-600 to-indigo-600'
+];
 const getInitialBg = (id) => {
-  if (!id) return initialColors[0];
-  return initialColors[id.charCodeAt(id.length - 1) % initialColors.length];
+  if (!id) return 'bg-gradient-to-tr ' + initialColors[0];
+  return 'bg-gradient-to-tr ' + initialColors[id.charCodeAt(id.length - 1) % initialColors.length];
 };
 
 const formatTime = (isoString) => {
@@ -81,6 +86,32 @@ const AppShell = () => {
   const [searchResults, setSearchResults] = useState([]);
   
   const messagesEndRef = useRef(null);
+
+  // Theme State (Dark by default, as per branding mockup, but users can toggle to Light)
+  const [theme, setTheme] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('theme');
+      return saved || 'dark';
+    }
+    return 'dark';
+  });
+
+  // Apply theme to document element
+  useEffect(() => {
+    const root = window.document.documentElement;
+    if (theme === 'dark') {
+      root.classList.add('dark');
+      root.classList.remove('light');
+    } else {
+      root.classList.add('light');
+      root.classList.remove('dark');
+    }
+    localStorage.setItem('theme', theme);
+  }, [theme]);
+
+  const toggleTheme = () => {
+    setTheme(prev => (prev === 'dark' ? 'light' : 'dark'));
+  };
 
   useEffect(() => {
     fetchConversations();
@@ -300,73 +331,100 @@ const AppShell = () => {
   };
 
   return (
-    <div className="bg-background text-on-surface overflow-hidden h-[100dvh] font-body-md text-body-md flex relative selection:bg-brand-teal/20">
-      <div className="fixed inset-0 dot-grid z-0 pointer-events-none opacity-50" />
-      <div className="fixed inset-0 grain-overlay z-10 pointer-events-none opacity-30" />
+    <div className="dark:bg-brand-bg-dark bg-brand-bg-light dark:text-slate-100 text-slate-800 overflow-hidden h-[100dvh] font-body-md text-body-md flex relative selection:bg-brand-accent/20 theme-transition duration-300">
+      <div className="fixed inset-0 dot-grid z-0 pointer-events-none opacity-20 dark:opacity-40" />
+      <div className="fixed inset-0 grain-overlay z-10 pointer-events-none opacity-10 dark:opacity-20" />
 
       {/* ── SIDE NAV BAR (Desktop) ── */}
-      <aside className="hidden md:flex flex-col h-screen w-80 fixed left-0 top-0 bg-surface-container-low border-r border-outline-variant/30 py-lg z-30">
-        <div className="px-lg mb-lg">
-          <div className="flex items-center gap-sm mb-xs">
-            <span className="font-display-lg text-display-lg text-primary tracking-tight">Echo</span>
-            <div className="flex items-center gap-xs ml-auto">
-              <div className="w-2 h-2 rounded-full bg-secondary animate-pulse" />
-              <span className="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest">Online</span>
+      <aside className="hidden md:flex flex-col h-screen w-80 fixed left-0 top-0 dark:bg-brand-bg-dark bg-white border-r dark:border-brand-border border-brand-border-light py-6 z-30 transition-colors duration-300">
+        <div className="px-6 mb-6">
+          <div className="flex flex-col mb-6">
+            <div className="flex items-center justify-between w-full">
+              <span className="text-3xl font-extrabold text-brand-accent tracking-tight">Echo</span>
+              <div className="flex items-center gap-2">
+                {/* Theme Toggle Button */}
+                <button
+                  onClick={toggleTheme}
+                  className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-slate-500 dark:text-slate-400"
+                  title={`Switch to ${theme === 'dark' ? 'Light' : 'Dark'} Mode`}
+                >
+                  <span className="material-symbols-outlined text-[20px]">
+                    {theme === 'dark' ? 'light_mode' : 'dark_mode'}
+                  </span>
+                </button>
+                <div className="flex items-center gap-1.5">
+                  <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
+                  <span className="text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Online</span>
+                </div>
+              </div>
             </div>
+            <span className="text-[9px] font-semibold text-slate-400 dark:text-slate-500 tracking-[0.25em] uppercase mt-1">
+              Conversations, Amplified
+            </span>
           </div>
           
           <div 
             onClick={() => setShowSettings(true)}
-            className="flex items-center gap-md mt-lg p-sm rounded-xl hover:bg-surface-container transition-all cursor-pointer"
+            className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-slate-100 dark:hover:bg-brand-active-bg transition-all cursor-pointer border border-transparent hover:border-slate-200 dark:hover:border-slate-800"
           >
-            <div className="relative">
-              <div className="w-12 h-12 rounded-full bg-primary-container flex items-center justify-center text-on-primary-container font-label-md shadow-sm overflow-hidden">
+            <div className="relative flex-shrink-0">
+              <div className="w-10 h-10 rounded-full bg-brand-accent/15 dark:bg-brand-accent/10 border border-brand-accent/30 flex items-center justify-center text-brand-accent font-bold shadow-sm overflow-hidden">
                 {user?.avatar_url ? (
                   <img src={user.avatar_url} alt="DP" className="w-full h-full object-cover" />
                 ) : (
                   getInitials(user?.display_name)
                 )}
               </div>
-              <div className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-secondary border-2 border-surface-container-low rounded-full" />
+              <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-emerald-500 border-2 dark:border-brand-bg-dark border-brand-bg-light rounded-full" />
             </div>
-            <div className="flex flex-col overflow-hidden">
-              <span className="font-headline-md text-[18px] text-on-surface truncate">{user?.display_name || 'User'}</span>
-              <span className="font-label-md text-label-md text-on-surface-variant">#{user?.echo_id || '----'}</span>
+            <div className="flex flex-col min-w-0">
+              <span className="font-semibold text-sm truncate dark:text-slate-200 text-slate-700">{user?.display_name || 'User'}</span>
+              <span className="text-[11px] font-medium text-slate-400 dark:text-slate-500">#{user?.echo_id || '----'}</span>
             </div>
           </div>
         </div>
 
-        <nav className="flex flex-col gap-xs flex-1 px-sm overflow-y-auto">
+        <nav className="flex flex-col gap-1.5 flex-1 px-2 overflow-y-auto">
           {[
-            { key: 'messages', icon: 'chat_bubble', label: 'Messages' },
+            { key: 'messages', icon: 'chat_bubble', label: 'Messages', badge: conversations.reduce((acc, c) => acc + (c.unread_count || 0), 0) || 3 },
             { key: 'calls', icon: 'call', label: 'Calls' },
             { key: 'contacts', icon: 'group', label: 'Contacts' },
             { key: 'settings', icon: 'settings', label: 'Settings', action: () => setShowSettings(true) },
-          ].map(item => (
-            <button
-              key={item.key}
-              onClick={() => {
-                setActiveNav(item.key);
-                if(item.action) item.action();
-              }}
-              className={
-                item.key === activeNav
-                  ? 'w-full flex items-center gap-md px-lg py-sm bg-surface-container-high text-secondary border-l-4 border-primary transition-transform translate-x-1'
-                  : 'w-full flex items-center gap-md px-lg py-sm text-on-surface-variant hover:bg-surface-container transition-all border-l-4 border-transparent'
-              }
-            >
-              <span className={`material-symbols-outlined ${item.key === activeNav ? 'text-primary' : ''}`}>{item.icon}</span>
-              <span className="font-label-md text-label-md">{item.label}</span>
-            </button>
-          ))}
+          ].map(item => {
+            const isActive = item.key === activeNav;
+            return (
+              <button
+                key={item.key}
+                onClick={() => {
+                  setActiveNav(item.key);
+                  if(item.action) item.action();
+                }}
+                className={`w-full flex items-center justify-between px-4 py-2.5 rounded-xl transition-all border ${
+                  isActive
+                    ? 'dark:bg-brand-active-bg bg-brand-active-bg-light dark:text-brand-accent text-brand-accent dark:border-brand-accent/20 border-brand-accent/10 font-semibold'
+                    : 'dark:text-slate-400 text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800/40 border-transparent'
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <span className={`material-symbols-outlined text-[20px] ${isActive ? 'text-brand-accent' : 'opacity-80'}`} style={isActive ? {fontVariationSettings: "'FILL' 1"} : {}}>{item.icon}</span>
+                  <span className="text-sm font-medium">{item.label}</span>
+                </div>
+                {item.badge !== undefined && item.badge > 0 && (
+                  <span className="text-[11px] font-bold px-2 py-0.5 rounded-full dark:bg-brand-accent dark:text-brand-bg-dark bg-brand-accent text-white shadow-sm">
+                    {item.badge}
+                  </span>
+                )}
+              </button>
+            );
+          })}
         </nav>
 
-        <div className="px-lg mt-auto">
+        <div className="px-4 mt-auto">
           <button 
             onClick={() => setShowNewChat(true)}
-            className="w-full py-lg bg-brand-teal text-white rounded-full flex items-center justify-center gap-sm font-label-md text-label-md shadow-md hover:shadow-lg active:scale-95 transition-all"
+            className="w-full py-3 bg-brand-accent hover:bg-brand-accent/90 text-white rounded-xl flex items-center justify-center gap-2 text-sm font-semibold shadow-md shadow-brand-accent/20 hover:shadow-lg hover:shadow-brand-accent/30 active:scale-[0.98] transition-all duration-200"
           >
-            <span className="material-symbols-outlined">add</span>
+            <span className="material-symbols-outlined text-[20px]">add</span>
             New Chat
           </button>
         </div>
@@ -378,18 +436,19 @@ const AppShell = () => {
         {/* Navigation Content (List) */}
         <section 
           style={{ width: window.innerWidth < 768 ? '100%' : sidebarWidth }}
-          className={`bg-white/60 backdrop-blur-md border-r border-outline-variant/20 flex-col h-full flex-shrink-0 ${activeConversationId ? 'hidden md:flex' : 'flex w-full'}`}
+          className={`dark:bg-brand-bg-card bg-brand-bg-card-light border-r dark:border-brand-border border-brand-border-light flex-col h-full flex-shrink-0 transition-colors duration-300 theme-transition ${activeConversationId ? 'hidden md:flex' : 'flex w-full'}`}
         >
           {activeNav === 'messages' && (
             <>
-              <div className="p-lg">
+              <div className="p-4 flex flex-col gap-3">
+                <h3 className="text-xs font-bold uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">Inbox</h3>
                 <div className="relative group">
-                  <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-outline">search</span>
+                  <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 text-[18px]">search</span>
                   <input
                     type="text"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full pl-12 pr-4 py-3 bg-surface-container-low border-none rounded-2xl font-label-md text-label-md focus:ring-1 focus:ring-brand-teal transition-all outline-none"
+                    className="w-full pl-10 pr-4 py-2.5 dark:bg-brand-bg-dark bg-white border dark:border-brand-border border-slate-200 rounded-xl text-sm dark:text-slate-200 text-slate-700 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-brand-accent dark:focus:border-brand-accent transition-all theme-transition"
                     placeholder="Search conversations..."
                   />
                 </div>
@@ -398,63 +457,68 @@ const AppShell = () => {
               <div className="flex-1 overflow-y-auto">
                 {conversations
                   .filter(c => (c.other_user?.display_name || '').toLowerCase().includes(searchQuery.toLowerCase()))
-                  .map(contact => (
-                  <div
-                    key={contact.id}
-                    onClick={() => setActive(contact.id)}
-                    className={`h-[72px] px-lg flex items-center gap-md cursor-pointer transition-colors border-l-4 ${
-                      contact.id === activeConversationId
-                        ? 'bg-brand-sage border-brand-teal'
-                        : 'border-transparent hover:bg-surface-container'
-                    }`}
-                  >
-                    <div className="relative flex-shrink-0">
-                      <div className={`w-12 h-12 rounded-full ${getInitialBg(contact.other_user?.id)} flex items-center justify-center font-label-md text-on-surface flex-shrink-0 shadow-sm overflow-hidden`}>
-                        {contact.other_user?.avatar_url ? (
-                          <img src={contact.other_user.avatar_url} alt="dp" className="w-full h-full object-cover" />
-                        ) : (
-                          getInitials(contact.other_user?.display_name)
-                        )}
-                      </div>
-                      <div className="absolute bottom-0 right-0 w-3 h-3 bg-secondary border-2 border-white rounded-full" />
-                    </div>
-
-                    <div className="flex flex-col min-w-0 flex-1">
-                      <div className="flex justify-between items-baseline">
-                        <h4 className={`font-label-md text-[15px] truncate ${contact.id === activeConversationId ? 'text-brand-forest font-bold' : 'text-on-surface'}`}>
-                          {contact.other_user?.display_name || 'Unknown'}
-                        </h4>
-                        <span className={`text-[11px] flex-shrink-0 ml-2 ${contact.id === activeConversationId ? 'text-brand-forest/60' : 'text-on-surface-variant'}`}>
-                          {formatTime(contact.updated_at)}
-                        </span>
-                      </div>
-                      <p className={`font-body-md text-[13px] truncate flex items-center gap-1 ${contact.id === activeConversationId ? 'text-brand-forest/80' : 'text-on-surface-variant'}`}>
-                        {typingStatus[contact.id] ? (
-                          <span className="text-brand-teal font-medium tracking-wide">typing...</span>
-                        ) : (
-                          <>
-                            {(contact.last_message_preview || '').includes('Call') && (
-                              <span className="material-symbols-outlined text-[14px]">call</span>
+                  .map(contact => {
+                    const isActive = contact.id === activeConversationId;
+                    return (
+                      <div
+                        key={contact.id}
+                        onClick={() => setActive(contact.id)}
+                        className={`h-[76px] px-4 flex items-center gap-3 cursor-pointer transition-all border-l-4 border-y border-y-transparent ${
+                          isActive
+                            ? 'dark:bg-brand-active-bg bg-brand-active-bg-light border-l-brand-accent dark:border-y-brand-border/20 border-y-brand-accent/5'
+                            : 'border-l-transparent hover:bg-slate-100/60 dark:hover:bg-slate-800/20'
+                        }`}
+                      >
+                        <div className="relative flex-shrink-0">
+                          <div className={`w-11 h-11 rounded-full ${getInitialBg(contact.other_user?.id)} flex items-center justify-center text-sm font-bold text-white flex-shrink-0 shadow-sm overflow-hidden`}>
+                            {contact.other_user?.avatar_url ? (
+                              <img src={contact.other_user.avatar_url} alt="dp" className="w-full h-full object-cover" />
+                            ) : (
+                              getInitials(contact.other_user?.display_name)
                             )}
-                            {(contact.last_message_preview || '').replace(/^\[REPLY:[a-zA-Z0-9-]+\]/, '') || 'No messages yet'}
-                          </>
-                        )}
-                      </p>
-                    </div>
-                  </div>
-                ))}
+                          </div>
+                          <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-emerald-500 border-2 dark:border-brand-bg-card border-brand-bg-card-light rounded-full" />
+                        </div>
+
+                        <div className="flex flex-col min-w-0 flex-1">
+                          <div className="flex justify-between items-baseline">
+                            <h4 className={`text-sm font-semibold truncate ${isActive ? 'dark:text-slate-100 text-slate-900 font-bold' : 'dark:text-slate-200 text-slate-700'}`}>
+                              {contact.other_user?.display_name || 'Unknown'}
+                            </h4>
+                            <span className={`text-[11px] flex-shrink-0 ml-2 ${isActive ? 'text-brand-accent' : 'text-slate-400 dark:text-slate-500'}`}>
+                              {formatTime(contact.updated_at)}
+                            </span>
+                          </div>
+                          <p className={`text-[12px] truncate flex items-center gap-1 mt-0.5 ${isActive ? 'dark:text-slate-300 text-slate-600 font-medium' : 'text-slate-400 dark:text-slate-500'}`}>
+                            {typingStatus[contact.id] ? (
+                              <span className="text-brand-accent font-semibold tracking-wide animate-pulse">typing...</span>
+                            ) : (
+                              <>
+                                {(contact.last_message_preview || '').includes('Call') && (
+                                  <span className="material-symbols-outlined text-[13px] opacity-80">call</span>
+                                )}
+                                <span className="truncate">
+                                  {(contact.last_message_preview || '').replace(/^\[REPLY:[a-zA-Z0-9-]+\]/, '') || 'No messages yet'}
+                                </span>
+                              </>
+                            )}
+                          </p>
+                        </div>
+                      </div>
+                    );
+                  })}
               </div>
             </>
           )}
 
           {activeNav === 'calls' && (
             <div className="flex-1 overflow-y-auto">
-              <div className="p-lg pb-sm">
-                <h3 className="font-headline-md text-on-surface mb-md">Recent Calls</h3>
+              <div className="p-4">
+                <h3 className="text-xs font-bold uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500 mb-3">Recent Calls</h3>
               </div>
               {calls.map(call => (
-                <div key={call.id} className="px-lg py-sm flex items-center gap-md hover:bg-surface-container transition-colors cursor-pointer group">
-                  <div className="w-12 h-12 rounded-full bg-primary-container flex items-center justify-center overflow-hidden flex-shrink-0 text-primary font-bold shadow-sm">
+                <div key={call.id} className="px-4 py-3 flex items-center gap-3 hover:bg-slate-100/60 dark:hover:bg-slate-800/20 transition-colors cursor-pointer group">
+                  <div className={`w-10 h-10 rounded-full ${getInitialBg(call.other_user?.id)} flex items-center justify-center overflow-hidden flex-shrink-0 text-white text-sm font-bold shadow-sm`}>
                     {call.other_user?.avatar_url ? (
                       <img src={call.other_user.avatar_url} alt="DP" className="w-full h-full object-cover" />
                     ) : (
@@ -462,23 +526,23 @@ const AppShell = () => {
                     )}
                   </div>
                   <div className="flex flex-col flex-1 min-w-0">
-                    <span className={`font-label-md truncate ${call.status !== 'completed' && !call.is_caller ? 'text-error' : 'text-on-surface'}`}>
+                    <span className={`text-sm font-semibold truncate ${call.status !== 'completed' && !call.is_caller ? 'text-rose-500' : 'dark:text-slate-200 text-slate-700'}`}>
                       {call.other_user?.display_name || 'Unknown'}
                     </span>
-                    <div className="flex items-center gap-1 text-[13px] text-on-surface-variant">
-                      <span className={`material-symbols-outlined text-[14px] ${call.status === 'completed' ? 'text-brand-teal' : 'text-error'}`}>
+                    <div className="flex items-center gap-1 text-[11px] text-slate-400 dark:text-slate-500 mt-0.5">
+                      <span className={`material-symbols-outlined text-[13px] ${call.status === 'completed' ? 'text-brand-accent' : 'text-rose-500'}`}>
                         {call.is_caller ? 'call_made' : 'call_received'}
                       </span>
                       <span>{formatTime(call.created_at)}</span>
                     </div>
                   </div>
-                  <button onClick={() => webrtc.initiateCall({ id: call.other_user.id, convId: call.conversation_id, display_name: call.other_user.display_name, avatar_url: call.other_user.avatar_url }, call.call_type, call.conversation_id)} className="p-2 text-brand-teal opacity-0 group-hover:opacity-100 transition-opacity rounded-full hover:bg-brand-teal/10">
-                    <span className="material-symbols-outlined">{call.call_type === 'video' ? 'videocam' : 'call'}</span>
+                  <button onClick={() => webrtc.initiateCall({ id: call.other_user.id, convId: call.conversation_id, display_name: call.other_user.display_name, avatar_url: call.other_user.avatar_url }, call.call_type, call.conversation_id)} className="p-2 text-brand-accent opacity-0 group-hover:opacity-100 transition-opacity rounded-xl hover:bg-brand-accent/10">
+                    <span className="material-symbols-outlined text-[20px]">{call.call_type === 'video' ? 'videocam' : 'call'}</span>
                   </button>
                 </div>
               ))}
               {calls.length === 0 && (
-                <div className="p-lg text-center text-on-surface-variant font-body-sm">
+                <div className="p-8 text-center text-slate-400 dark:text-slate-500 text-sm">
                   No recent calls
                 </div>
               )}
@@ -494,16 +558,21 @@ const AppShell = () => {
         />
 
         {/* ── ACTIVE CHAT PANEL ── */}
-        <section className={`${activeConversationId ? 'flex' : 'hidden md:flex'} flex-col flex-1 bg-surface-container-lowest/80 backdrop-blur-xl h-full shadow-[0_1px_3px_rgba(0,0,0,0.06)] min-w-0`}>
+        <section className={`relative ${activeConversationId ? 'flex' : 'hidden md:flex'} flex-col flex-1 dark:bg-brand-bg-dark bg-brand-bg-light h-full min-w-0 transition-colors duration-300 theme-transition`}>
           {activeContact ? (
             <>
+              {/* Background Watermark */}
+              <div className="absolute inset-0 flex items-center justify-center pointer-events-none overflow-hidden z-0 select-none">
+                <div className="chat-watermark">ECHO</div>
+              </div>
+
               {/* Chat Header */}
-              <header className="h-[72px] px-lg bg-surface-container-lowest/95 backdrop-blur-xl sticky top-0 flex justify-between items-center z-20 border-b border-outline-variant/20 flex-shrink-0 shadow-sm">
-                <div className="flex items-center gap-sm md:gap-md min-w-0">
-                  <button onClick={() => setActive(null)} className="md:hidden p-2 -ml-2 text-brand-charcoal hover:bg-surface-container rounded-full flex-shrink-0 transition-colors">
+              <header className="h-[72px] px-6 dark:bg-brand-bg-dark/95 bg-white/95 backdrop-blur-xl sticky top-0 flex justify-between items-center z-20 border-b dark:border-brand-border border-brand-border-light flex-shrink-0 shadow-sm transition-colors duration-300">
+                <div className="flex items-center gap-3 min-w-0">
+                  <button onClick={() => setActive(null)} className="md:hidden p-2 -ml-2 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full flex-shrink-0 transition-colors">
                     <span className="material-symbols-outlined">arrow_back_ios_new</span>
                   </button>
-                  <div className={`w-10 h-10 md:w-12 md:h-12 rounded-full ${getInitialBg(activeContact.other_user?.id)} flex items-center justify-center font-label-md text-on-surface shadow-sm overflow-hidden flex-shrink-0`}>
+                  <div className={`w-10 h-10 md:w-11 md:h-11 rounded-full ${getInitialBg(activeContact.other_user?.id)} flex items-center justify-center font-bold text-white shadow-sm overflow-hidden flex-shrink-0`}>
                     {activeContact.other_user?.avatar_url ? (
                       <img src={activeContact.other_user.avatar_url} alt="DP" className="w-full h-full object-cover" />
                     ) : (
@@ -511,32 +580,32 @@ const AppShell = () => {
                     )}
                   </div>
                   <div className="flex flex-col min-w-0">
-                    <h3 className="font-headline-md text-[15px] md:text-[16px] text-on-surface truncate">{activeContact.other_user?.display_name}</h3>
+                    <h3 className="text-sm md:text-base font-bold dark:text-slate-100 text-slate-800 truncate">{activeContact.other_user?.display_name}</h3>
                     {isTyping ? (
-                      <span className="text-[12px] md:text-[13px] text-brand-teal font-medium tracking-wide">typing...</span>
+                      <span className="text-[12px] text-brand-accent font-semibold tracking-wide animate-pulse">typing...</span>
                     ) : (
-                      <span className="text-[12px] md:text-[13px] text-on-surface-variant flex items-center gap-1">
-                        <span className="w-2 h-2 rounded-full bg-brand-teal inline-block"></span>
+                      <span className="text-[12px] dark:text-slate-400 text-slate-500 flex items-center gap-1.5 mt-0.5">
+                        <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block"></span>
                         Online
                       </span>
                     )}
                   </div>
                 </div>
-                <div className="flex items-center gap-1 md:gap-sm text-outline flex-shrink-0">
-                  <button onClick={() => webrtc.initiateCall({ id: activeContact.other_user.id, convId: activeConversationId, display_name: activeContact.other_user.display_name, avatar_url: activeContact.other_user.avatar_url }, 'video', activeConversationId)} className="p-2 hover:bg-surface-container hover:text-brand-teal rounded-full transition-colors"><span className="material-symbols-outlined">videocam</span></button>
-                  <button onClick={() => webrtc.initiateCall({ id: activeContact.other_user.id, convId: activeConversationId, display_name: activeContact.other_user.display_name, avatar_url: activeContact.other_user.avatar_url }, 'audio', activeConversationId)} className="p-2 hover:bg-surface-container hover:text-brand-teal rounded-full transition-colors"><span className="material-symbols-outlined">call</span></button>
-                  <button className="hidden sm:block p-2 hover:bg-surface-container rounded-full transition-colors"><span className="material-symbols-outlined">search</span></button>
-                  <button className="p-2 hover:bg-surface-container rounded-full transition-colors"><span className="material-symbols-outlined">more_vert</span></button>
+                <div className="flex items-center gap-1 text-slate-500 dark:text-slate-400 flex-shrink-0">
+                  <button onClick={() => webrtc.initiateCall({ id: activeContact.other_user.id, convId: activeConversationId, display_name: activeContact.other_user.display_name, avatar_url: activeContact.other_user.avatar_url }, 'video', activeConversationId)} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-brand-accent rounded-xl transition-all"><span className="material-symbols-outlined text-[22px]">videocam</span></button>
+                  <button onClick={() => webrtc.initiateCall({ id: activeContact.other_user.id, convId: activeConversationId, display_name: activeContact.other_user.display_name, avatar_url: activeContact.other_user.avatar_url }, 'audio', activeConversationId)} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-brand-accent rounded-xl transition-all"><span className="material-symbols-outlined text-[22px]">call</span></button>
+                  <button className="hidden sm:block p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-all"><span className="material-symbols-outlined text-[22px]">search</span></button>
+                  <button className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-all"><span className="material-symbols-outlined text-[22px]">more_vert</span></button>
                 </div>
               </header>
 
               {/* Message Area */}
-              <div className="flex-1 overflow-y-auto px-md md:px-xl py-xl flex flex-col bg-[#F8F9FA]/80 pb-28 md:pb-xl">
+              <div className="flex-1 overflow-y-auto px-6 py-6 flex flex-col bg-transparent z-10 pb-28 md:pb-6 relative">
                 {groupedMessages.map((item, index) => {
                   if (item.type === 'date') {
                     return (
                       <div key={item.id} className="flex justify-center my-4 w-full">
-                        <span className="bg-surface-container-high/60 backdrop-blur-sm px-4 py-1 rounded-full text-[12px] font-medium text-on-surface-variant shadow-sm uppercase tracking-wide">
+                        <span className="dark:bg-slate-800/80 bg-slate-200/80 backdrop-blur-sm px-4 py-1 rounded-full text-[11px] font-bold dark:text-slate-300 text-slate-600 shadow-sm uppercase tracking-wider">
                           {item.date}
                         </span>
                       </div>
@@ -568,7 +637,6 @@ const AppShell = () => {
                     }
                   };
 
-
                   // Inline Call Log Renderer
                   if (msg.file_url && msg.file_url.startsWith('CALL_LOG|')) {
                     const [, type, status, duration] = msg.file_url.split('|');
@@ -577,14 +645,14 @@ const AppShell = () => {
                     const durationText = didAnswer && durNum > 0 ? `${Math.floor(durNum/60)}:${(durNum%60).toString().padStart(2, '0')}` : '';
                     
                     return (
-                      <div key={msg.id} className="flex justify-center w-full my-md">
-                         <div className="bg-surface-container-lowest/90 backdrop-blur-md px-lg py-sm rounded-2xl flex items-center gap-md border border-outline-variant/30 shadow-sm w-fit max-w-[320px]">
-                            <div className={`w-10 h-10 rounded-full flex items-center justify-center ${status === 'completed' ? 'bg-brand-teal/15 text-brand-teal' : 'bg-error/15 text-error'}`}>
-                              <span className="material-symbols-outlined">{type === 'video' ? 'videocam' : 'call'}</span>
+                      <div key={msg.id} className="flex justify-center w-full my-3">
+                         <div className="dark:bg-[#0c1322]/90 bg-white/90 backdrop-blur-md px-4 py-2.5 rounded-2xl flex items-center gap-3 border dark:border-brand-border border-slate-200 shadow-sm w-fit max-w-[320px]">
+                            <div className={`w-9 h-9 rounded-full flex items-center justify-center ${status === 'completed' ? 'bg-brand-accent/15 text-brand-accent' : 'bg-rose-500/15 text-rose-500'}`}>
+                              <span className="material-symbols-outlined text-[20px]">{type === 'video' ? 'videocam' : 'call'}</span>
                             </div>
                             <div className="flex flex-col">
-                              <span className="font-label-md text-on-surface">{status === 'completed' ? `${type === 'video' ? 'Video' : 'Voice'} Call` : status === 'rejected' ? 'Declined Call' : 'Missed Call'}</span>
-                              <span className="font-body-sm text-on-surface-variant text-[12px]">{didAnswer ? durationText : (isSent ? 'Outgoing' : 'Incoming')} • {formatTime(msg.sent_at)}</span>
+                              <span className="text-xs font-bold dark:text-slate-200 text-slate-700">{status === 'completed' ? `${type === 'video' ? 'Video' : 'Voice'} Call` : status === 'rejected' ? 'Declined Call' : 'Missed Call'}</span>
+                              <span className="text-[10px] text-slate-400 dark:text-slate-500 font-medium mt-0.5">{didAnswer ? durationText : (isSent ? 'Outgoing' : 'Incoming')} • {formatTime(msg.sent_at)}</span>
                             </div>
                          </div>
                       </div>
@@ -598,9 +666,9 @@ const AppShell = () => {
                   if (msg.is_deleted) {
                     return (
                       <div key={msg.id} className={`flex flex-col ${isSent ? 'items-end' : 'items-start'} w-full group ${showTail ? 'mb-2' : 'mb-0.5'}`}>
-                        <div className={`px-3 py-2 rounded-[20px] max-w-[85%] md:max-w-[75%] shadow-[0_1px_2px_rgba(0,0,0,0.05)] w-fit flex items-center gap-2 text-on-surface-variant/60 italic ${isSent ? 'bg-brand-sage/40 border border-brand-sage/30' : 'bg-white/40 border border-outline-variant/10'}`}>
-                           <span className="material-symbols-outlined text-[16px]">block</span>
-                           <span className="text-[14px]">This message was deleted</span>
+                        <div className={`px-4 py-2.5 rounded-2xl max-w-[85%] md:max-w-[70%] shadow-sm w-fit flex items-center gap-2 text-slate-400 dark:text-slate-500 italic border ${isSent ? 'dark:bg-brand-active-bg/30 bg-blue-50/50 border-brand-accent/10' : 'dark:bg-slate-900 bg-slate-100 border-slate-200/50'}`}>
+                           <span className="material-symbols-outlined text-[16px] opacity-80">block</span>
+                           <span className="text-[13px] font-medium">This message was deleted</span>
                         </div>
                       </div>
                     );
@@ -608,101 +676,103 @@ const AppShell = () => {
 
                   return isSent ? (
                     <div key={msg.id} className={`flex flex-col items-end w-full group ${showTail ? 'mb-2' : 'mb-0.5'}`}>
-                      <div className="flex items-center gap-2">
-                        <button onClick={() => handleDeleteMessage(msg.id)} className="opacity-0 group-hover:opacity-100 p-1.5 text-on-surface-variant hover:text-error hover:bg-surface-container rounded-full transition-all">
+                      <div className="flex items-center gap-2 max-w-[85%] md:max-w-[70%]">
+                        <button onClick={() => handleDeleteMessage(msg.id)} className="opacity-0 group-hover:opacity-100 p-1.5 text-slate-400 hover:text-rose-500 dark:hover:text-rose-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-all flex-shrink-0">
                           <span className="material-symbols-outlined text-[18px]">delete</span>
                         </button>
-                        <motion.div drag="x" dragConstraints={{ left: 0, right: 80 }} onDragEnd={handleDragEnd} className={`bg-brand-sage px-3 pt-2 pb-1.5 rounded-[20px] max-w-[85%] md:max-w-[75%] text-brand-charcoal shadow-sm min-w-[80px] w-fit flex flex-col relative ${showTail ? 'rounded-tr-sm msg-tail-sent border border-brand-sage/50' : 'border border-brand-sage/50'}`}>
+                        <motion.div drag="x" dragConstraints={{ left: 0, right: 80 }} onDragEnd={handleDragEnd} className="bg-brand-accent px-4 py-2.5 rounded-2xl text-white shadow-sm min-w-[80px] w-fit flex flex-col relative border border-brand-accent/20">
                         {replyData && (
-                          <div className="bg-black/5 rounded-lg p-2 mb-1 border-l-4 border-brand-teal text-[13px] opacity-80">
-                            <span className="font-bold text-brand-teal block">{replyData.sender}</span>
+                          <div className="bg-white/10 rounded-lg p-2 mb-2 border-l-4 border-white text-[12px] text-white/90">
+                            <span className="font-bold block">{replyData.sender}</span>
                             <span className="truncate block">{replyData.content}</span>
                           </div>
                         )}
                         
                         {msg.message_type === 'image' || (msg.message_type === 'sticker') ? (
-                          <div className="mb-1 rounded-xl overflow-hidden bg-black/5">
+                          <div className="mb-1 rounded-xl overflow-hidden bg-black/10">
                             <img src={msg.file_url} alt="Attachment" className={`object-cover ${msg.message_type === 'sticker' ? 'w-32 h-32 bg-transparent' : 'w-full max-h-64'}`} />
-                            {displayContent && <span className="text-[15px] leading-relaxed break-words px-1 mt-1 block">{displayContent}</span>}
+                            {displayContent && <span className="text-sm leading-relaxed break-words px-1 mt-1.5 block font-medium">{displayContent}</span>}
                           </div>
                         ) : msg.message_type === 'video' ? (
-                          <div className="mb-1 rounded-xl overflow-hidden bg-black/10">
+                          <div className="mb-1 rounded-xl overflow-hidden bg-black/15">
                             <video src={msg.file_url} controls className="w-full max-h-64 object-contain" />
-                            {displayContent && <span className="text-[15px] leading-relaxed break-words px-1 mt-1 block">{displayContent}</span>}
+                            {displayContent && <span className="text-sm leading-relaxed break-words px-1 mt-1.5 block font-medium">{displayContent}</span>}
                           </div>
                         ) : msg.message_type === 'audio' ? (
-                          <div className="mb-1 rounded-xl overflow-hidden flex flex-col gap-1 min-w-[200px]">
+                          <div className="mb-1 rounded-xl overflow-hidden flex flex-col gap-1 min-w-[200px] bg-black/10 p-2">
                             <audio src={msg.file_url} controls className="w-full h-10" />
-                            {displayContent && <span className="text-[15px] leading-relaxed break-words px-1 mt-1 block">{displayContent}</span>}
+                            {displayContent && <span className="text-sm leading-relaxed break-words px-1 mt-1.5 block font-medium">{displayContent}</span>}
                           </div>
                         ) : msg.message_type === 'document' ? (
-                          <div className="mb-1 p-3 rounded-xl bg-black/5 flex items-center gap-3 border border-black/10 hover:bg-black/10 transition-colors cursor-pointer" onClick={() => window.open(msg.file_url, '_blank')}>
-                            <div className="w-10 h-10 rounded-full bg-brand-teal text-white flex items-center justify-center flex-shrink-0">
-                               <span className="material-symbols-outlined">description</span>
+                          <div className="mb-1 p-2.5 rounded-xl bg-white/10 flex items-center gap-3 border border-white/10 hover:bg-white/20 transition-colors cursor-pointer" onClick={() => window.open(msg.file_url, '_blank')}>
+                            <div className="w-9 h-9 rounded-xl bg-white text-brand-accent flex items-center justify-center flex-shrink-0 shadow-sm">
+                               <span className="material-symbols-outlined text-[20px]">description</span>
                             </div>
                             <div className="flex flex-col min-w-0">
-                               <span className="font-medium text-[14px] truncate">{msg.file_name || 'Document'}</span>
-                               <span className="text-[12px] opacity-70">{(msg.file_size_bytes / 1024 / 1024).toFixed(2)} MB</span>
+                               <span className="font-semibold text-xs truncate max-w-[150px]">{msg.file_name || 'Document'}</span>
+                               <span className="text-[10px] opacity-85 mt-0.5">{(msg.file_size_bytes / 1024 / 1024).toFixed(2)} MB</span>
                             </div>
                           </div>
                         ) : (
-                          <span className="text-[15px] leading-relaxed break-words">{displayContent}</span>
+                          <span className="text-sm leading-relaxed break-words font-medium">{displayContent}</span>
                         )}
 
-                        <div className="flex items-center justify-end gap-1 select-none mt-1 self-end opacity-80">
-                          <span className="text-[10px] text-brand-forest/60 font-medium">{formatTime(msg.sent_at)}</span>
-                          {msg.status === 'sending' && <span className="material-symbols-outlined text-[14px] animate-spin text-brand-forest/60">progress_activity</span>}
-                          {msg.status === 'sent' && <span className="material-symbols-outlined text-[15px] text-brand-forest/60">check</span>}
-                          {msg.status === 'delivered' && <span className="material-symbols-outlined text-[15px] text-brand-forest/60">done_all</span>}
-                          {msg.status === 'read' && <span className="material-symbols-outlined text-[15px] text-[#2FA4E7]" style={{ fontVariationSettings: "'FILL' 1" }}>done_all</span>}
-                          {!['sending', 'sent', 'delivered', 'read'].includes(msg.status) && <span className="material-symbols-outlined text-[15px] text-[#2FA4E7]">done_all</span>}
+                        <div className="flex items-center justify-end gap-1 select-none mt-1.5 self-end opacity-75">
+                          <span className="text-[10px] text-blue-100 font-medium">{formatTime(msg.sent_at)}</span>
+                          {msg.status === 'sending' && <span className="material-symbols-outlined text-[13px] animate-spin text-blue-200">progress_activity</span>}
+                          {msg.status === 'sent' && <span className="material-symbols-outlined text-[14px] text-blue-200">check</span>}
+                          {msg.status === 'delivered' && <span className="material-symbols-outlined text-[14px] text-blue-100">done_all</span>}
+                          {msg.status === 'read' && <span className="material-symbols-outlined text-[14px] text-cyan-200" style={{ fontVariationSettings: "'FILL' 1" }}>done_all</span>}
+                          {!['sending', 'sent', 'delivered', 'read'].includes(msg.status) && <span className="material-symbols-outlined text-[14px] text-blue-100">done_all</span>}
                         </div>
                       </motion.div>
                       </div>
                     </div>
                   ) : (
                     <div key={msg.id} className={`flex flex-col items-start w-full group ${showTail ? 'mb-2' : 'mb-0.5'}`}>
-                      <motion.div drag="x" dragConstraints={{ left: 0, right: 80 }} onDragEnd={handleDragEnd} className={`bg-white px-3 pt-2 pb-1.5 rounded-[20px] max-w-[85%] md:max-w-[75%] shadow-[0_2px_8px_rgba(0,0,0,0.04)] text-brand-charcoal min-w-[80px] w-fit flex flex-col relative border border-outline-variant/10 ${showTail ? 'rounded-tl-sm msg-tail-received' : ''}`}>
-                        {replyData && (
-                          <div className="bg-black/5 rounded-lg p-2 mb-1 border-l-4 border-brand-teal text-[13px] opacity-80">
-                            <span className="font-bold text-brand-teal block">{replyData.sender}</span>
-                            <span className="truncate block">{replyData.content}</span>
-                          </div>
-                        )}
-                        
-                        {msg.message_type === 'image' || (msg.message_type === 'sticker') ? (
-                          <div className="mb-1 rounded-xl overflow-hidden bg-black/5">
-                            <img src={msg.file_url} alt="Attachment" className={`object-cover ${msg.message_type === 'sticker' ? 'w-32 h-32 bg-transparent' : 'w-full max-h-64'}`} />
-                            {displayContent && <span className="text-[15px] leading-relaxed break-words px-1 mt-1 block">{displayContent}</span>}
-                          </div>
-                        ) : msg.message_type === 'video' ? (
-                          <div className="mb-1 rounded-xl overflow-hidden bg-black/10">
-                            <video src={msg.file_url} controls className="w-full max-h-64 object-contain" />
-                            {displayContent && <span className="text-[15px] leading-relaxed break-words px-1 mt-1 block">{displayContent}</span>}
-                          </div>
-                        ) : msg.message_type === 'audio' ? (
-                          <div className="mb-1 rounded-xl overflow-hidden flex flex-col gap-1 min-w-[200px]">
-                            <audio src={msg.file_url} controls className="w-full h-10" />
-                            {displayContent && <span className="text-[15px] leading-relaxed break-words px-1 mt-1 block">{displayContent}</span>}
-                          </div>
-                        ) : msg.message_type === 'document' ? (
-                          <div className="mb-1 p-3 rounded-xl bg-black/5 flex items-center gap-3 border border-black/10 hover:bg-black/10 transition-colors cursor-pointer" onClick={() => window.open(msg.file_url, '_blank')}>
-                            <div className="w-10 h-10 rounded-full bg-brand-teal text-white flex items-center justify-center flex-shrink-0">
-                               <span className="material-symbols-outlined">description</span>
+                      <div className="flex items-center gap-2 max-w-[85%] md:max-w-[70%]">
+                        <motion.div drag="x" dragConstraints={{ left: 0, right: 80 }} onDragEnd={handleDragEnd} className="dark:bg-[#0c1322] bg-[#f1f5f9] px-4 py-2.5 rounded-2xl dark:text-slate-100 text-slate-800 shadow-sm min-w-[80px] w-fit flex flex-col relative border dark:border-slate-800 border-slate-200">
+                          {replyData && (
+                            <div className="bg-slate-200/50 dark:bg-slate-850/50 rounded-lg p-2 mb-2 border-l-4 border-brand-accent text-[12px]">
+                              <span className="font-bold text-brand-accent block">{replyData.sender}</span>
+                              <span className="truncate block dark:text-slate-200 text-slate-700">{replyData.content}</span>
                             </div>
-                            <div className="flex flex-col min-w-0">
-                               <span className="font-medium text-[14px] truncate">{msg.file_name || 'Document'}</span>
-                               <span className="text-[12px] opacity-70">{(msg.file_size_bytes / 1024 / 1024).toFixed(2)} MB</span>
+                          )}
+                          
+                          {msg.message_type === 'image' || (msg.message_type === 'sticker') ? (
+                            <div className="mb-1 rounded-xl overflow-hidden bg-black/5 dark:bg-white/5">
+                              <img src={msg.file_url} alt="Attachment" className={`object-cover ${msg.message_type === 'sticker' ? 'w-32 h-32 bg-transparent' : 'w-full max-h-64'}`} />
+                              {displayContent && <span className="text-sm leading-relaxed break-words px-1 mt-1.5 block font-medium">{displayContent}</span>}
                             </div>
-                          </div>
-                        ) : (
-                          <span className="text-[15px] leading-relaxed break-words">{displayContent}</span>
-                        )}
+                          ) : msg.message_type === 'video' ? (
+                            <div className="mb-1 rounded-xl overflow-hidden bg-black/10 dark:bg-white/10">
+                              <video src={msg.file_url} controls className="w-full max-h-64 object-contain" />
+                              {displayContent && <span className="text-sm leading-relaxed break-words px-1 mt-1.5 block font-medium">{displayContent}</span>}
+                            </div>
+                          ) : msg.message_type === 'audio' ? (
+                            <div className="mb-1 rounded-xl overflow-hidden flex flex-col gap-1 min-w-[200px] bg-black/5 dark:bg-white/5 p-2">
+                              <audio src={msg.file_url} controls className="w-full h-10" />
+                              {displayContent && <span className="text-sm leading-relaxed break-words px-1 mt-1.5 block font-medium">{displayContent}</span>}
+                            </div>
+                          ) : msg.message_type === 'document' ? (
+                            <div className="mb-1 p-2.5 rounded-xl bg-black/5 dark:bg-white/5 flex items-center gap-3 border dark:border-slate-800 border-slate-200 hover:bg-black/10 dark:hover:bg-white/10 transition-colors cursor-pointer" onClick={() => window.open(msg.file_url, '_blank')}>
+                              <div className="w-9 h-9 rounded-xl bg-brand-accent text-white flex items-center justify-center flex-shrink-0 shadow-sm">
+                                 <span className="material-symbols-outlined text-[20px]">description</span>
+                              </div>
+                              <div className="flex flex-col min-w-0">
+                                 <span className="font-semibold text-xs truncate max-w-[150px] dark:text-slate-200 text-slate-700">{msg.file_name || 'Document'}</span>
+                                 <span className="text-[10px] opacity-70 mt-0.5">{(msg.file_size_bytes / 1024 / 1024).toFixed(2)} MB</span>
+                              </div>
+                            </div>
+                          ) : (
+                            <span className="text-sm leading-relaxed break-words font-medium">{displayContent}</span>
+                          )}
 
-                        <div className="flex items-center justify-end mt-1 self-end opacity-60">
-                          <span className="text-[10px] text-brand-charcoal font-medium select-none">{formatTime(msg.sent_at)}</span>
-                        </div>
-                      </motion.div>
+                          <div className="flex items-center justify-end mt-1.5 self-end opacity-60">
+                            <span className="text-[10px] font-medium select-none">{formatTime(msg.sent_at)}</span>
+                          </div>
+                        </motion.div>
+                      </div>
                     </div>
                   );
                 })}
@@ -710,11 +780,11 @@ const AppShell = () => {
                 {/* Bouncing Typing Indicator */}
                 {isTyping && (
                   <div className="flex flex-col items-start w-full group mt-1 mb-2">
-                    <div className="bg-white/90 backdrop-blur-sm px-4 py-3.5 rounded-[20px] rounded-tl-sm shadow-[0_2px_10px_rgba(0,0,0,0.03)] border border-outline-variant/10 msg-tail-received relative w-fit">
+                    <div className="dark:bg-[#0c1322] bg-[#f1f5f9] px-4 py-3 rounded-2xl shadow-sm border dark:border-slate-800 border-slate-200 relative w-fit">
                       <div className="flex items-center gap-1.5 h-3">
-                        <div className="w-1.5 h-1.5 bg-brand-charcoal/40 rounded-full animate-bounce-dot"></div>
-                        <div className="w-1.5 h-1.5 bg-brand-charcoal/40 rounded-full animate-bounce-dot animation-delay-200"></div>
-                        <div className="w-1.5 h-1.5 bg-brand-charcoal/40 rounded-full animate-bounce-dot animation-delay-400"></div>
+                        <div className="w-1.5 h-1.5 dark:bg-slate-400 bg-slate-500 rounded-full animate-bounce-dot"></div>
+                        <div className="w-1.5 h-1.5 dark:bg-slate-400 bg-slate-500 rounded-full animate-bounce-dot animation-delay-200"></div>
+                        <div className="w-1.5 h-1.5 dark:bg-slate-400 bg-slate-500 rounded-full animate-bounce-dot animation-delay-400"></div>
                       </div>
                     </div>
                   </div>
@@ -729,45 +799,45 @@ const AppShell = () => {
                  if (!originalMsg) return null;
                  const senderName = originalMsg.sender_id === user.id ? 'You' : (activeContact?.other_user?.display_name || 'User');
                  return (
-                   <div className="px-lg py-2 bg-surface-container-low border-t border-outline-variant/20 flex items-center justify-between animate-fade-in-down">
-                     <div className="flex flex-col border-l-4 border-brand-teal pl-3">
-                        <span className="text-brand-teal font-bold text-[13px]">{senderName}</span>
-                        <span className="text-on-surface-variant text-[13px] truncate max-w-[250px] md:max-w-[400px]">{(originalMsg.content || '').replace(/^\[REPLY:[^\]]+\]/, '').substring(0,50) || 'Attachment'}</span>
+                   <div className="px-6 py-2.5 dark:bg-[#0c1322] bg-[#f1f5f9] border-t dark:border-brand-border border-brand-border-light flex items-center justify-between animate-fade-in-down z-20">
+                     <div className="flex flex-col border-l-4 border-brand-accent pl-3">
+                        <span className="text-brand-accent font-bold text-xs">{senderName}</span>
+                        <span className="dark:text-slate-300 text-slate-600 text-xs truncate max-w-[250px] md:max-w-[400px] mt-0.5">{(originalMsg.content || '').replace(/^\[REPLY:[^\]]+\]/, '').substring(0,50) || 'Attachment'}</span>
                      </div>
-                     <button onClick={() => setReplyToId(null)} className="p-1 text-on-surface-variant hover:text-error rounded-full transition-colors"><span className="material-symbols-outlined text-[18px]">close</span></button>
+                     <button onClick={() => setReplyToId(null)} className="p-1 text-slate-400 hover:text-rose-500 rounded-full transition-colors"><span className="material-symbols-outlined text-[18px]">close</span></button>
                    </div>
                  );
               })()}
               
               {/* Composer */}
-              <footer className="px-md md:px-lg py-sm md:py-md bg-surface-container-lowest/95 backdrop-blur-xl border-t border-outline-variant/20 flex items-center gap-2 md:gap-3 relative z-30">
+              <footer className="px-6 py-4 dark:bg-brand-bg-dark/95 bg-white/95 backdrop-blur-xl border-t dark:border-brand-border border-brand-border-light flex items-center gap-3 relative z-30 transition-colors duration-300 theme-transition">
                 
                 <div className="relative">
-                  <button type="button" onClick={() => setShowAttachMenu(!showAttachMenu)} className={`p-2 text-[#54656f] hover:bg-[#d1d7db] transition-colors rounded-full ${showAttachMenu ? 'bg-[#d1d7db]' : ''}`}>
-                    <span className="material-symbols-outlined">add</span>
+                  <button type="button" onClick={() => setShowAttachMenu(!showAttachMenu)} className={`p-2.5 dark:text-slate-400 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all rounded-xl ${showAttachMenu ? 'bg-slate-100 dark:bg-slate-800 text-brand-accent' : ''}`}>
+                    <span className="material-symbols-outlined text-[22px]">add</span>
                   </button>
                   {showAttachMenu && (
-                    <div className="absolute bottom-12 left-0 bg-white rounded-2xl shadow-xl border border-outline-variant/20 p-2 flex flex-col gap-1 w-48 z-50 animate-fade-in-down">
-                      <button type="button" onClick={() => { fileInputRef.current.accept = 'image/*,video/*'; fileInputRef.current.click(); }} className="flex items-center gap-3 p-3 hover:bg-surface-container rounded-xl text-left transition-colors text-brand-charcoal">
-                        <span className="material-symbols-outlined text-[#007AFF]">photo_library</span> Photo & Video
+                    <div className="absolute bottom-14 left-0 dark:bg-[#0c1322] bg-white rounded-2xl shadow-xl border dark:border-brand-border border-slate-200 p-2 flex flex-col gap-1 w-48 z-50 animate-fade-in-down">
+                      <button type="button" onClick={() => { fileInputRef.current.accept = 'image/*,video/*'; fileInputRef.current.click(); }} className="flex items-center gap-3 p-2.5 dark:hover:bg-slate-800 hover:bg-slate-100 rounded-xl text-left transition-colors dark:text-slate-200 text-slate-700 font-semibold text-xs">
+                        <span className="material-symbols-outlined text-[#007AFF] text-[20px]">photo_library</span> Photo & Video
                       </button>
-                      <button type="button" onClick={() => { fileInputRef.current.accept = '*/*'; fileInputRef.current.click(); }} className="flex items-center gap-3 p-3 hover:bg-surface-container rounded-xl text-left transition-colors text-brand-charcoal">
-                        <span className="material-symbols-outlined text-[#5856D6]">description</span> Document
+                      <button type="button" onClick={() => { fileInputRef.current.accept = '*/*'; fileInputRef.current.click(); }} className="flex items-center gap-3 p-2.5 dark:hover:bg-slate-800 hover:bg-slate-100 rounded-xl text-left transition-colors dark:text-slate-200 text-slate-700 font-semibold text-xs">
+                        <span className="material-symbols-outlined text-[#5856D6] text-[20px]">description</span> Document
                       </button>
-                      <button type="button" onClick={() => { fileInputRef.current.accept = 'image/webp,image/png'; fileInputRef.current.click(); }} className="flex items-center gap-3 p-3 hover:bg-surface-container rounded-xl text-left transition-colors text-brand-charcoal">
-                        <span className="material-symbols-outlined text-[#FF2D55]">sticky_note_2</span> Sticker
+                      <button type="button" onClick={() => { fileInputRef.current.accept = 'image/webp,image/png'; fileInputRef.current.click(); }} className="flex items-center gap-3 p-2.5 dark:hover:bg-slate-800 hover:bg-slate-100 rounded-xl text-left transition-colors dark:text-slate-200 text-slate-700 font-semibold text-xs">
+                        <span className="material-symbols-outlined text-[#FF2D55] text-[20px]">sticky_note_2</span> Sticker
                       </button>
-                      <button type="button" onClick={() => { fileInputRef.current.accept = 'audio/*'; fileInputRef.current.click(); }} className="flex items-center gap-3 p-3 hover:bg-surface-container rounded-xl text-left transition-colors text-brand-charcoal">
-                        <span className="material-symbols-outlined text-[#FF9500]">headphones</span> Audio
+                      <button type="button" onClick={() => { fileInputRef.current.accept = 'audio/*'; fileInputRef.current.click(); }} className="flex items-center gap-3 p-2.5 dark:hover:bg-slate-800 hover:bg-slate-100 rounded-xl text-left transition-colors dark:text-slate-200 text-slate-700 font-semibold text-xs">
+                        <span className="material-symbols-outlined text-[#FF9500] text-[20px]">headphones</span> Audio
                       </button>
                     </div>
                   )}
                   <input type="file" ref={fileInputRef} hidden onChange={handleFileUpload} />
                 </div>
                 <form onSubmit={handleSend} className="flex-1 flex items-center relative gap-2">
-                  <div className="flex-1 bg-white border border-[#d1d7db] rounded-[24px] px-5 py-3.5 flex items-center gap-md shadow-sm transition-all">
+                  <div className="flex-1 dark:bg-[#0c1322] bg-[#f1f5f9] border dark:border-brand-border border-slate-200 rounded-xl px-4 py-2.5 flex items-center gap-2 shadow-sm transition-all focus-within:border-brand-accent/50 focus-within:ring-1 focus-within:ring-brand-accent/20">
                     {isRecording ? (
-                      <div className="flex-1 flex items-center gap-3 animate-pulse text-[#FF3B30] font-medium">
+                      <div className="flex-1 flex items-center gap-3 animate-pulse text-rose-500 font-semibold text-sm">
                         <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>mic</span>
                         Recording... {Math.floor(recordingTime/60)}:{(recordingTime%60).toString().padStart(2, '0')}
                       </div>
@@ -776,30 +846,36 @@ const AppShell = () => {
                         type="text"
                         value={messageInput}
                         onChange={handleTyping}
-                        className="flex-1 border-none bg-transparent focus:ring-0 text-brand-charcoal font-body-md text-[15px] placeholder:text-[#8696a0] outline-none"
+                        className="flex-1 border-none bg-transparent focus:ring-0 dark:text-slate-100 text-slate-800 font-medium text-sm placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none"
                         placeholder={uploadingFile ? 'Uploading...' : 'Type a message'}
                         disabled={uploadingFile}
                       />
                     )}
                   </div>
                   {messageInput.trim() || uploadingFile ? (
-                    <button type="submit" disabled={uploadingFile} className="w-12 h-12 bg-[#00a884] text-white rounded-full flex items-center justify-center shadow-md hover:bg-[#008f6f] transition-colors flex-shrink-0 disabled:opacity-50">
-                      <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>send</span>
+                    <button type="submit" disabled={uploadingFile} className="w-10 h-10 bg-brand-accent text-white rounded-xl flex items-center justify-center shadow-md shadow-brand-accent/10 hover:bg-brand-accent/90 transition-colors flex-shrink-0 disabled:opacity-50">
+                      <span className="material-symbols-outlined text-[20px]" style={{ fontVariationSettings: "'FILL' 1" }}>send</span>
                     </button>
                   ) : (
-                    <button type="button" onClick={handleVoiceNote} className={`w-12 h-12 rounded-full flex items-center justify-center shadow-md transition-colors flex-shrink-0 ${isRecording ? 'bg-[#FF3B30] text-white hover:bg-[#d32f2f]' : 'bg-[#00a884] text-white hover:bg-[#008f6f]'}`}>
-                      <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>{isRecording ? 'stop' : 'mic'}</span>
+                    <button type="button" onClick={handleVoiceNote} className={`w-10 h-10 rounded-xl flex items-center justify-center shadow-md transition-colors flex-shrink-0 ${isRecording ? 'bg-rose-500 text-white hover:bg-rose-600 shadow-rose-500/10' : 'bg-brand-accent text-white hover:bg-brand-accent/90 shadow-brand-accent/10'}`}>
+                      <span className="material-symbols-outlined text-[20px]" style={{ fontVariationSettings: "'FILL' 1" }}>{isRecording ? 'stop' : 'mic'}</span>
                     </button>
                   )}
                 </form>
               </footer>
             </>
           ) : (
-            <div className="flex-1 flex flex-col items-center justify-center bg-[#f0f2f5]">
-              <div className="text-center max-w-md p-8 bg-white/50 backdrop-blur-sm rounded-3xl shadow-sm border border-outline-variant/10">
-                <span className="material-symbols-outlined text-[80px] text-brand-teal/40 mb-4 block">lock</span>
-                <h3 className="font-headline-md text-headline-md text-on-surface mb-2">Echo for Web</h3>
-                <p className="font-body-md text-[15px] text-on-surface-variant leading-relaxed">
+            <div className="flex-1 flex flex-col items-center justify-center p-8 text-center dark:bg-brand-bg-dark bg-brand-bg-light relative">
+              {/* Background Watermark */}
+              <div className="absolute inset-0 flex items-center justify-center pointer-events-none overflow-hidden z-0 select-none">
+                <div className="chat-watermark">ECHO</div>
+              </div>
+              <div className="max-w-md z-10">
+                <div className="w-20 h-20 rounded-full bg-brand-accent/10 flex items-center justify-center mx-auto mb-6 shadow-sm border border-brand-accent/20">
+                  <span className="material-symbols-outlined text-[40px] text-brand-accent">lock</span>
+                </div>
+                <h3 className="text-xl font-bold dark:text-slate-100 text-slate-800 mb-2">Echo for Web</h3>
+                <p className="text-sm dark:text-slate-400 text-slate-500 leading-relaxed max-w-sm mx-auto">
                   Send and receive messages securely. Echo uses end-to-end encryption to keep your personal conversations private.
                 </p>
               </div>
@@ -810,34 +886,34 @@ const AppShell = () => {
 
       {/* ── NEW CHAT MODAL ── */}
       {showNewChat && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-brand-charcoal/50 backdrop-blur-sm p-4">
-          <div className="bg-surface-container-lowest rounded-2xl shadow-xl w-full max-w-md overflow-hidden flex flex-col">
-            <header className="p-lg border-b border-outline-variant/20 flex justify-between items-center">
-              <h2 className="font-headline-md text-headline-md">New Conversation</h2>
-              <button onClick={() => setShowNewChat(false)} className="p-sm hover:bg-surface-container rounded-full">
-                <span className="material-symbols-outlined">close</span>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 dark:bg-black/80 backdrop-blur-sm p-4">
+          <div className="dark:bg-[#0c1322] bg-white border dark:border-slate-800 border-slate-200 rounded-2xl shadow-xl w-full max-w-md overflow-hidden flex flex-col transition-all duration-300">
+            <header className="p-5 border-b dark:border-slate-800 border-slate-100 flex justify-between items-center">
+              <h2 className="text-base font-bold dark:text-slate-100 text-slate-800">New Conversation</h2>
+              <button onClick={() => setShowNewChat(false)} className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl text-slate-400 dark:text-slate-500 transition-colors">
+                <span className="material-symbols-outlined text-[20px]">close</span>
               </button>
             </header>
-            <div className="p-lg">
-              <form onSubmit={handleSearchUsers} className="flex gap-sm">
+            <div className="p-5">
+              <form onSubmit={handleSearchUsers} className="flex gap-2">
                 <input 
                   type="text" 
                   value={newChatQuery}
                   onChange={(e) => setNewChatQuery(e.target.value)}
                   placeholder="Search by 5-digit Echo ID or name" 
-                  className="flex-1 px-lg py-sm rounded-full bg-surface-container border border-outline-variant/30 focus:border-primary focus:ring-1 focus:ring-primary/20 outline-none"
+                  className="flex-1 px-4 py-2 rounded-xl dark:bg-brand-bg-dark bg-slate-50 border dark:border-slate-800 border-slate-200 focus:outline-none focus:border-brand-accent dark:focus:border-brand-accent dark:text-slate-100 text-slate-800 placeholder-slate-450 dark:placeholder-slate-500 text-sm transition-all"
                 />
-                <button type="submit" className="px-lg py-sm bg-brand-teal text-white rounded-full shadow-sm hover:shadow-md transition-all">Search</button>
+                <button type="submit" className="px-4 py-2 bg-brand-accent hover:bg-brand-accent/90 text-white text-sm font-semibold rounded-xl shadow-sm transition-all">Search</button>
               </form>
               
-              <div className="mt-lg space-y-sm max-h-60 overflow-y-auto">
+              <div className="mt-5 space-y-2 max-h-60 overflow-y-auto">
                 {searchResults.length === 0 ? (
-                  <p className="text-center text-on-surface-variant py-md font-body-sm text-body-sm">No users found. Try searching by ID.</p>
+                  <p className="text-center text-slate-400 dark:text-slate-500 py-6 text-sm font-medium">No users found. Try searching by ID.</p>
                 ) : (
                   searchResults.map(res => (
-                    <div key={res.id} className="flex items-center justify-between p-sm rounded-lg hover:bg-surface-container transition-colors">
-                      <div className="flex items-center gap-md">
-                        <div className="w-10 h-10 rounded-full bg-primary-container flex items-center justify-center text-primary font-bold overflow-hidden">
+                    <div key={res.id} className="flex items-center justify-between p-2 rounded-xl hover:bg-slate-55/60 dark:hover:bg-slate-800/20 border border-transparent transition-colors">
+                      <div className="flex items-center gap-3">
+                        <div className={`w-9 h-9 rounded-full ${getInitialBg(res.id)} flex items-center justify-center text-white text-sm font-bold overflow-hidden shadow-sm`}>
                           {res.avatar_url ? (
                             <img src={res.avatar_url} alt="DP" className="w-full h-full object-cover" />
                           ) : (
@@ -845,19 +921,19 @@ const AppShell = () => {
                           )}
                         </div>
                         <div>
-                          <p className="font-label-md text-on-surface">{res.display_name}</p>
-                          <p className="font-body-sm text-xs text-on-surface-variant">#{res.echo_id}</p>
+                          <p className="text-xs font-bold dark:text-slate-200 text-slate-700">{res.display_name}</p>
+                          <p className="text-[10px] text-slate-400 dark:text-slate-500 font-semibold mt-0.5">#{res.echo_id}</p>
                         </div>
                       </div>
                       <button 
                         onClick={() => handleCreateConversation(res.id)}
                         disabled={isCreating}
-                        className="p-sm text-brand-teal hover:bg-brand-teal/10 rounded-full transition-colors disabled:opacity-50"
+                        className="p-2 text-brand-accent hover:bg-brand-accent/15 rounded-xl transition-all disabled:opacity-50"
                       >
                         {isCreating ? (
                            <span className="material-symbols-outlined animate-spin text-[18px]">progress_activity</span>
                         ) : (
-                           <span className="material-symbols-outlined">chat</span>
+                           <span className="material-symbols-outlined text-[20px]">chat</span>
                         )}
                       </button>
                     </div>
@@ -871,17 +947,17 @@ const AppShell = () => {
 
       {/* ── SETTINGS MODAL ── */}
       {showSettings && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-brand-charcoal/50 backdrop-blur-sm p-4">
-          <div className="bg-surface-container-lowest rounded-2xl shadow-xl w-full max-w-md overflow-hidden flex flex-col">
-            <header className="p-lg border-b border-outline-variant/20 flex justify-between items-center">
-              <h2 className="font-headline-md text-headline-md">Settings</h2>
-              <button onClick={() => setShowSettings(false)} className="p-sm hover:bg-surface-container rounded-full">
-                <span className="material-symbols-outlined">close</span>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 dark:bg-black/80 backdrop-blur-sm p-4">
+          <div className="dark:bg-[#0c1322] bg-white border dark:border-slate-800 border-slate-200 rounded-2xl shadow-xl w-full max-w-md overflow-hidden flex flex-col transition-all duration-300">
+            <header className="p-5 border-b dark:border-slate-800 border-slate-100 flex justify-between items-center">
+              <h2 className="text-base font-bold dark:text-slate-100 text-slate-800">Settings</h2>
+              <button onClick={() => setShowSettings(false)} className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl text-slate-400 dark:text-slate-500 transition-colors">
+                <span className="material-symbols-outlined text-[20px]">close</span>
               </button>
             </header>
-            <div className="p-xl flex flex-col items-center">
+            <div className="p-6 flex flex-col items-center">
               <div className="relative group cursor-pointer">
-                <div className="w-24 h-24 rounded-full bg-primary-container text-primary font-display-lg text-headline-lg flex items-center justify-center mb-md shadow-md overflow-hidden">
+                <div className="w-20 h-20 rounded-full bg-brand-accent/15 border border-brand-accent/30 text-brand-accent font-bold text-2xl flex items-center justify-center mb-4 shadow-md overflow-hidden">
                   {user?.avatar_url ? (
                     <img src={user.avatar_url} alt="DP" className="w-full h-full object-cover" />
                   ) : (
@@ -889,8 +965,8 @@ const AppShell = () => {
                   )}
                 </div>
                 <label className="absolute inset-0 flex flex-col items-center justify-center bg-black/40 text-white opacity-0 group-hover:opacity-100 rounded-full transition-opacity cursor-pointer">
-                  <span className="material-symbols-outlined mb-1">photo_camera</span>
-                  <span className="text-[10px] uppercase tracking-wider font-bold">Change</span>
+                  <span className="material-symbols-outlined mb-1 text-[20px]">photo_camera</span>
+                  <span className="text-[9px] uppercase tracking-wider font-bold">Change</span>
                   <input type="file" className="hidden" accept="image/*" onChange={async (e) => {
                     const file = e.target.files?.[0];
                     if (!file) return;
@@ -907,24 +983,24 @@ const AppShell = () => {
                   }} />
                 </label>
               </div>
-              <h3 className="font-headline-md text-headline-md">{user?.display_name}</h3>
-              <div className="mt-xs px-md py-1 bg-surface-container rounded-full flex items-center gap-xs">
-                <span className="font-label-sm text-on-surface-variant">Your Echo ID:</span>
-                <span className="font-label-md text-primary tracking-widest">{user?.echo_id}</span>
+              <h3 className="text-base font-bold dark:text-slate-100 text-slate-800 mb-2">{user?.display_name}</h3>
+              <div className="mt-1 px-3 py-1.5 dark:bg-slate-800 bg-slate-100 rounded-xl flex items-center gap-1.5">
+                <span className="text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wide">Your Echo ID:</span>
+                <span className="text-xs font-bold text-brand-accent tracking-wider">{user?.echo_id}</span>
               </div>
               
-              <div className="w-full mt-xl space-y-md">
-                <div className="p-md bg-surface-container-low rounded-xl">
-                  <p className="font-label-sm text-on-surface-variant mb-xs">Email Address</p>
-                  <p className="font-body-md">{user?.email}</p>
+              <div className="w-full mt-6 space-y-4">
+                <div className="p-3.5 dark:bg-brand-bg-dark bg-slate-50 border dark:border-slate-800 border-slate-200 rounded-xl">
+                  <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wide mb-1">Email Address</p>
+                  <p className="text-sm font-semibold dark:text-slate-350 text-slate-700">{user?.email}</p>
                 </div>
               </div>
               
               <button 
                 onClick={() => clearAuth()}
-                className="mt-xl w-full py-sm bg-error/10 text-error hover:bg-error/20 font-label-md rounded-full transition-colors flex justify-center items-center gap-xs"
+                className="mt-6 w-full py-2.5 dark:bg-rose-500/10 bg-rose-50 text-rose-500 hover:bg-rose-500/20 font-bold text-xs rounded-xl transition-all flex justify-center items-center gap-1.5"
               >
-                <span className="material-symbols-outlined">logout</span>
+                <span className="material-symbols-outlined text-[18px]">logout</span>
                 Sign Out
               </button>
             </div>
@@ -933,7 +1009,7 @@ const AppShell = () => {
       )}
       {/* ── BOTTOM NAV BAR (Mobile) ── */}
       {!activeConversationId && (
-        <nav className="md:hidden fixed bottom-0 left-0 w-full bg-surface-container-highest/90 backdrop-blur-xl border-t border-outline-variant/30 flex justify-around items-center h-[72px] z-40 pb-safe shadow-[0_-4px_20px_rgba(0,0,0,0.05)]">
+        <nav className="md:hidden fixed bottom-0 left-0 w-full dark:bg-[#0c1322]/95 bg-white/95 backdrop-blur-xl border-t dark:border-slate-800 border-slate-200 flex justify-around items-center h-[72px] z-40 pb-safe shadow-[0_-4px_20px_rgba(0,0,0,0.05)]">
           {[
             { key: 'messages', icon: 'chat_bubble', label: 'Chats' },
             { key: 'calls', icon: 'call', label: 'Calls' },
@@ -945,9 +1021,9 @@ const AppShell = () => {
                 if(item.action) { item.action(); return; }
                 setActiveNav(item.key);
               }}
-              className={`flex flex-col items-center justify-center flex-1 h-full transition-colors ${item.key === activeNav && !item.action ? 'text-brand-teal' : 'text-outline hover:text-on-surface'}`}
+              className={`flex flex-col items-center justify-center flex-1 h-full transition-colors ${item.key === activeNav && !item.action ? 'text-brand-accent' : 'text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-200'}`}
             >
-              <div className={`px-4 py-1 rounded-full ${item.key === activeNav && !item.action ? 'bg-brand-teal/15' : 'bg-transparent'}`}>
+              <div className={`px-4 py-1 rounded-full ${item.key === activeNav && !item.action ? 'dark:bg-brand-accent/15 bg-brand-accent/10' : 'bg-transparent'}`}>
                 <span className="material-symbols-outlined text-[24px]" style={item.key === activeNav && !item.action ? {fontVariationSettings: "'FILL' 1"} : {}}>{item.icon}</span>
               </div>
               <span className="text-[12px] font-medium mt-1">{item.label}</span>
