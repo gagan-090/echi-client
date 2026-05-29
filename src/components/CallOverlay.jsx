@@ -132,7 +132,7 @@ const CallOverlay = ({ callState, remoteUser, localStream, remoteStream, acceptC
 
         {/* Local PIP Video (Draggable) */}
         <AnimatePresence>
-          {(localStream && callState === 'connected' && isVideo) && (
+          {(localStream && (callState === 'connected' || callState === 'ringing') && isVideo) && (
             <motion.div
               drag
               dragConstraints={containerRef}

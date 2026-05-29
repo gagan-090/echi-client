@@ -141,7 +141,6 @@ const AppShell = () => {
     let file = e.target.files?.[0];
     if (!file || !activeConversationId) return;
     setShowAttachMenu(false);
-    setUploadingFile(true);
     
     // Image Compression
     if (file.type.startsWith('image/') && !file.type.includes('gif')) {
@@ -153,6 +152,34 @@ const AppShell = () => {
       }
     }
     
+    let msgType = forcedType;
+    if (!msgType) {
+      if (file.type.startsWith('image/')) msgType = 'image';
+      else if (file.type.startsWith('video/')) msgType = 'video';
+      else if (file.type.startsWith('audio/')) msgType = 'audio';
+      else msgType = 'document';
+    }
+
+    const localUrl = URL.createObjectURL(file);
+    const tempId = `temp-upload-${Date.now()}`;
+    const tempMsg = {
+      id: tempId,
+      conversation_id: activeConversationId,
+      sender_id: user.id,
+      content: '',
+      message_type: msgType,
+      file_url: localUrl,
+      file_name: file.name,
+      file_size_bytes: file.size,
+      is_deleted: false,
+      sent_at: new Date().toISOString(),
+      status: 'sending'
+    };
+
+    useMessageStore.getState().appendMessage(activeConversationId, tempMsg);
+    // Auto scroll down immediately when temp message is appended
+    setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 50);
+
     const formData = new FormData();
     formData.append('file', file);
     
@@ -161,14 +188,6 @@ const AppShell = () => {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
       
-      let msgType = forcedType;
-      if (!msgType) {
-        if (file.type.startsWith('image/')) msgType = 'image';
-        else if (file.type.startsWith('video/')) msgType = 'video';
-        else if (file.type.startsWith('audio/')) msgType = 'audio';
-        else msgType = 'document';
-      }
-      
       const fileData = {
         url: data.data.url,
         fileName: file.name,
@@ -176,12 +195,19 @@ const AppShell = () => {
         mimeType: file.type
       };
       
+      useMessageStore.setState(state => ({
+        messages: {
+          ...state.messages,
+          [activeConversationId]: state.messages[activeConversationId].filter(m => m.id !== tempId)
+        }
+      }));
+
       await sendMessage(activeConversationId, '', user.id, msgType, fileData, replyToId);
       setReplyToId(null);
     } catch (err) {
       console.error('File upload failed', err);
+      useMessageStore.getState().updateMsg(activeConversationId, tempId, { status: 'failed' });
     } finally {
-      setUploadingFile(false);
       e.target.value = '';
     }
   };
@@ -446,7 +472,7 @@ const AppShell = () => {
                       <span>{formatTime(call.created_at)}</span>
                     </div>
                   </div>
-                  <button onClick={() => webrtc.initiateCall({ id: call.other_user.id, convId: call.conversation_id }, call.call_type, call.conversation_id)} className="p-2 text-brand-teal opacity-0 group-hover:opacity-100 transition-opacity rounded-full hover:bg-brand-teal/10">
+                  <button onClick={() => webrtc.initiateCall({ id: call.other_user.id, convId: call.conversation_id, display_name: call.other_user.display_name, avatar_url: call.other_user.avatar_url }, call.call_type, call.conversation_id)} className="p-2 text-brand-teal opacity-0 group-hover:opacity-100 transition-opacity rounded-full hover:bg-brand-teal/10">
                     <span className="material-symbols-outlined">{call.call_type === 'video' ? 'videocam' : 'call'}</span>
                   </button>
                 </div>
@@ -497,8 +523,8 @@ const AppShell = () => {
                   </div>
                 </div>
                 <div className="flex items-center gap-1 md:gap-sm text-outline flex-shrink-0">
-                  <button onClick={() => webrtc.initiateCall({ id: activeContact.other_user.id, convId: activeConversationId }, 'video', activeConversationId)} className="p-2 hover:bg-surface-container hover:text-brand-teal rounded-full transition-colors"><span className="material-symbols-outlined">videocam</span></button>
-                  <button onClick={() => webrtc.initiateCall({ id: activeContact.other_user.id, convId: activeConversationId }, 'audio', activeConversationId)} className="p-2 hover:bg-surface-container hover:text-brand-teal rounded-full transition-colors"><span className="material-symbols-outlined">call</span></button>
+                  <button onClick={() => webrtc.initiateCall({ id: activeContact.other_user.id, convId: activeConversationId, display_name: activeContact.other_user.display_name, avatar_url: activeContact.other_user.avatar_url }, 'video', activeConversationId)} className="p-2 hover:bg-surface-container hover:text-brand-teal rounded-full transition-colors"><span className="material-symbols-outlined">videocam</span></button>
+                  <button onClick={() => webrtc.initiateCall({ id: activeContact.other_user.id, convId: activeConversationId, display_name: activeContact.other_user.display_name, avatar_url: activeContact.other_user.avatar_url }, 'audio', activeConversationId)} className="p-2 hover:bg-surface-container hover:text-brand-teal rounded-full transition-colors"><span className="material-symbols-outlined">call</span></button>
                   <button className="hidden sm:block p-2 hover:bg-surface-container rounded-full transition-colors"><span className="material-symbols-outlined">search</span></button>
                   <button className="p-2 hover:bg-surface-container rounded-full transition-colors"><span className="material-symbols-outlined">more_vert</span></button>
                 </div>
