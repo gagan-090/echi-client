@@ -407,7 +407,7 @@ const AppShell = () => {
 
         <nav className="flex flex-col gap-1.5 flex-1 px-2 overflow-y-auto">
           {[
-            { key: 'messages', icon: 'chat_bubble', label: 'Messages', badge: conversations.reduce((acc, c) => acc + (c.unread_count || 0), 0) || 3 },
+            { key: 'messages', icon: 'chat_bubble', label: 'Messages', badge: conversations.reduce((acc, c) => acc + (c.unread_count || 0), 0) },
             { key: 'calls', icon: 'call', label: 'Calls' },
             { key: 'contacts', icon: 'group', label: 'Contacts' },
             { key: 'invite', icon: 'person_add', label: 'Invite Friend', action: () => setShowInviteModal(true) },
@@ -463,7 +463,12 @@ const AppShell = () => {
           {activeNav === 'messages' && (
             <>
               <div className="p-4 flex flex-col gap-3">
-                <h3 className="text-xs font-bold uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">Inbox</h3>
+                <div className="flex justify-between items-center">
+                  <h3 className="text-xs font-bold uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">Inbox</h3>
+                  <span className="text-[11px] font-bold px-2 py-0.5 rounded-full dark:bg-brand-bg-dark bg-slate-100 text-slate-500 dark:text-slate-400 transition-colors border dark:border-brand-border border-slate-200">
+                    {conversations.length} {conversations.length === 1 ? 'chat' : 'chats'}
+                  </span>
+                </div>
                 <div className="relative group">
                   <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 text-[18px]">search</span>
                   <input
@@ -499,7 +504,9 @@ const AppShell = () => {
                               getInitials(contact.other_user?.display_name)
                             )}
                           </div>
-                          <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-emerald-500 border-2 dark:border-brand-bg-card border-brand-bg-card-light rounded-full" />
+                          {onlineUsers.includes(contact.other_user?.id) && (
+                            <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-emerald-500 border-2 dark:border-brand-bg-card border-brand-bg-card-light rounded-full" />
+                          )}
                         </div>
 
                         <div className="flex flex-col min-w-0 flex-1">
@@ -610,10 +617,15 @@ const AppShell = () => {
                     <h3 className="text-sm md:text-base font-bold dark:text-slate-100 text-slate-800 truncate">{activeContact.other_user?.display_name}</h3>
                     {isTyping ? (
                       <span className="text-[12px] text-brand-accent font-semibold tracking-wide animate-pulse">typing...</span>
-                    ) : (
+                    ) : onlineUsers.includes(activeContact.other_user?.id) ? (
                       <span className="text-[12px] dark:text-slate-400 text-slate-500 flex items-center gap-1.5 mt-0.5">
                         <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block"></span>
                         Online
+                      </span>
+                    ) : (
+                      <span className="text-[12px] dark:text-slate-500 text-slate-400 flex items-center gap-1.5 mt-0.5">
+                        <span className="w-2 h-2 rounded-full bg-slate-400 inline-block"></span>
+                        Offline
                       </span>
                     )}
                   </div>

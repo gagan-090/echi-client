@@ -32,6 +32,10 @@ export const useRealtime = () => {
       console.log('⚡️ Connected to Socket.io for Realtime');
     });
 
+    socket.on('online_users', (users) => {
+      useUiStore.getState().setOnlineUsers(users);
+    });
+
     // 1. Listen for new messages routed through BullMQ/Redis
     socket.on('new_message', (payload) => {
       const { conversation_id } = payload;
