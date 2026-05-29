@@ -591,10 +591,7 @@ const AppShell = () => {
 
           {activeContact ? (
             <>
-              {/* Background Watermark */}
-              <div className="absolute inset-0 flex items-center justify-center pointer-events-none overflow-hidden z-0 select-none">
-                <div className="chat-watermark">ECHO</div>
-              </div>
+
 
               {/* Chat Header */}
               <header className="h-[72px] px-6 dark:bg-brand-bg-dark/95 bg-white/95 backdrop-blur-xl sticky top-0 flex justify-between items-center z-20 border-b dark:border-brand-border border-brand-border-light flex-shrink-0 shadow-sm transition-colors duration-300">
@@ -896,10 +893,7 @@ const AppShell = () => {
             </>
           ) : (
             <div className="flex-1 flex flex-col items-center justify-center p-8 text-center dark:bg-brand-bg-dark bg-brand-bg-light relative">
-              {/* Background Watermark */}
-              <div className="absolute inset-0 flex items-center justify-center pointer-events-none overflow-hidden z-0 select-none">
-                <div className="chat-watermark">ECHO</div>
-              </div>
+
               <div className="max-w-md z-10 animate-fade-in flex flex-col items-center">
                 <div className="w-20 h-20 rounded-2xl bg-gradient-to-tr from-brand-accent/20 to-blue-500/5 dark:from-brand-accent/15 dark:to-transparent flex items-center justify-center mb-6 shadow-md border border-brand-accent/30 rotate-3">
                   <span className="material-symbols-outlined text-[36px] text-brand-accent animate-bounce-subtle">chat_bubble</span>
